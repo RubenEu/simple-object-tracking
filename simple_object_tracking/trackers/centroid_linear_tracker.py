@@ -64,13 +64,16 @@ class CentroidLinearTracker(ObjectTracker):
 
     def _resolve_matches(self, matches, objects_prev, objects_actual):
         """
-        Actual criterio: el que antes se hizo.
-        TODO: ¿Qué criterio seguir? ¿El que más puntuación tenga? ¿El que menor distancia?
-         ¿El primero y ya?
-        :param matches:
-        :param objects_prev:
-        :param objects_actual:
-        :return:
+        Un objeto previo puede tener como candidatos de emparejamiento varios objetos actuales,
+        para ello debe resolverse el emparejamiento.
+
+        Actualmente la implementación es: el primer objeto que devuelva la implementación de
+        búsqueda de matches.
+
+        :param matches: lista de emparejamientos [(obj_prev_i, obj_act_j), ...].
+        :param objects_prev: lista de objetos previos.
+        :param objects_actual: lista de objetos actuales.
+        :return: lista de los matches resueltos.
         """
         resolved_matches = list()
         # Para evitar emparejamientos duplicados, llevar la lista de si ha sido emparejado ya.
@@ -85,9 +88,6 @@ class CentroidLinearTracker(ObjectTracker):
     def _do_matches(self, frame_actual, objects_actual):
         """
 
-        TODO: Problema de que los frames sean muchos: puede que el objeto se encuentre a una
-         distancia mayor que la tolerada, por tanto podría introducirse un factor que
-         lo maneje: distancia < distance_tolerance + (num_frames_atrás * factor).
         :param frame_actual:
         :param objects_actual:
         :return: índices de los objetos actuales emparejados.
