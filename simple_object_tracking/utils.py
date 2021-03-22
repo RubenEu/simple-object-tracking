@@ -34,18 +34,23 @@ def positions_in_object_tracking(objects_history, sequence):
     return positions
 
 
-def sequence_with_objects_trace(sequence, tracker):
+def sequence_with_objects_trace(sequence, tracker, max_frames_elapsed=40):
     """Dada una secuencia, dibuja todas las trazas de todos los objetos que se han podido seguir.
     """
     class Track:
         """Mantiene la información del seguimiento de un objeto."""
-        def __init__(self, positions, last_frame_seen, color_trace=(255, 0, 0)):
+        def __init__(self,
+                     positions,
+                     last_frame_seen,
+                     color_trace=(255, 0, 0),
+                     color_box=(255, 0, 0)):
             # Posiciones del objeto indexadas por el nº del frame.
             self.positions = positions
             # Último frame en el que fue visto el objeto.
             self.last_frame_seen = last_frame_seen
-            # Color con el que se pintará este objeto.
+            # Color con el que se pintará la info. del objeto.
             self.color_trace = color_trace
+            self.color_box = color_box
     # Copia del video para pintarlo.
     seq_with_traces = sequence.copy()
     # Extraer todos los objetos (incluso los eliminados en algún momento).
@@ -57,18 +62,30 @@ def sequence_with_objects_trace(sequence, tracker):
         positions = positions_in_object_tracking(obj_history, sequence)
         last_frame_seen = [index for index, pos in enumerate(positions) if pos is not None][-1]
         colors = np.random.uniform(0, 255, size=(len(objects_uid), 3))
-        track = Track(positions, last_frame_seen, color_trace=colors[obj_uid])
+        track = Track(positions,
+                      last_frame_seen,
+                      color_trace=colors[obj_uid],
+                      color_box=colors[obj_uid])
         objects_track.append(track)
     # Pintar en cada frame el seguimiento hasta ese frame.
     for frame_id, frame in enumerate(sequence):
         # Pintar el seguimiento para cada objeto hasta el frame_id.
         for obj_uid in objects_uid:
+            # Comprobar si el objeto se detectó en este frame, si no se detectó, pasar, ya que
+            # no se hará nada con él.
+            obj_history = tracker.registered_objects.history[obj_uid]
+            # Obtener el objeto en el frame actual (si es posible, ya que no siempre se detecta).
+            objs_actual_frame = [obj for fr_id, obj in obj_history if frame_id == fr_id]
+            obj_actual_frame = None
+            if len(objs_actual_frame) == 1:
+                obj_actual_frame = objs_actual_frame[0]
+            elif len(objs_actual_frame) > 1:
+                raise Exception('This shouldnt happen.')
             obj_track = objects_track[obj_uid]
             frames_elapsed = frame_id - obj_track.last_frame_seen
             # Si han pasado más de N frames desde que se siguió ese objeto, pasar al siguiente.
-            if frames_elapsed > 40:
+            if frames_elapsed > max_frames_elapsed:
                 continue
-            obj_history = tracker.registered_objects.history[obj_uid]
             # Posiciones de ese objeto.
             positions = obj_track.positions
             # Posiciones hasta el frame actual.
@@ -82,9 +99,15 @@ def sequence_with_objects_trace(sequence, tracker):
                 pair = (positions_only_detected[i-1], positions_only_detected[i])
                 pair_points.append(pair)
             # Lets draw!
+            # Pintar bounding box.
+            if obj_actual_frame:
+                (left, right, top, bottom) = obj_actual_frame.bounding_box
+                seq_with_traces[frame_id] = cv2.rectangle(frame, (left, top), (right, bottom),
+                                                          obj_track.color_box, 2)
             for pair_point in pair_points:
                 p1, p2 = pair_point
-                seq_with_traces[frame_id] = cv2.line(frame, p1, p2, obj_track.color_trace, 5)
+                # Pintar línea de seguimiento.
+                seq_with_traces[frame_id] = cv2.line(frame, p1, p2, obj_track.color_trace, 2)
                 # seq_with_traces[frame_id] = cv2.circle(frame, point_1, 0, (0, 255, 0), 3)
     return seq_with_traces
 
