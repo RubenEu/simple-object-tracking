@@ -34,7 +34,7 @@ class CentroidLinearTracker(ObjectTracker):
             self.registered_objects.register_object(obj, 0)
 
     def _distance_tolerance(self):
-        a = np.amax([self.width, self.height])
+        a = np.amax([self.frame_width, self.frame_height])
         return a * self.distance_tolerance_factor
 
     def _calculate_matches(self, objects_prev, objects_actual):

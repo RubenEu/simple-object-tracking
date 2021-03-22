@@ -34,7 +34,7 @@ class ObjectTracker:
     """
 
     def __init__(self,
-                 sequence,
+                 sequence_with_information,
                  object_detector=None,
                  object_detections=None,
                  objects_min_score=0.10,
@@ -45,7 +45,8 @@ class ObjectTracker:
                  **kwargs):
         """
 
-        :param sequence: lista de imágenes (frames).
+        :param sequence_with_information: información de la secuencia y lista de frames
+        con el formato de tupla (width, height, fps, frames).
         :param object_detector: detector de objetos inicializado.
         :param object_detections: lista con las detecciones de objetos realizadas en los frames.
         :param objects_min_score: puntuación mínima que deben tener los objetos detectados.
@@ -57,8 +58,8 @@ class ObjectTracker:
         :param args:
         :param kwargs:
         """
-        # Lista de frames (secuencia).
-        self.sequence = sequence
+        # Lista de frames (secuencia) e información sobre la secuencia (ancho, alto, fps).
+        self.frame_width, self.frame_height, self.frames_per_second, self.sequence = sequence_with_information
         # Comprobar que se ha pasado un detector de objetos o la lista con las detecciones.
         assert_msg = 'You must provide an object detector or a file with detections.'
         assert object_detector or object_detections, assert_msg
@@ -68,13 +69,10 @@ class ObjectTracker:
         self.object_detections = object_detections
         # Asegurar que hay detecciones de tantos frames como secuencias.
         assert_msg = 'The sequence and objects detections length must be the same.'
-        assert object_detections and len(object_detections) == len(sequence), assert_msg
+        assert object_detections and len(object_detections) == len(self.sequence), assert_msg
         self.objects_min_score = objects_min_score  # TODO Implementar SOT-2
         self.objects_classes = objects_classes  # TODO Implementar SOT-2
         self.objects_avoid_duplicated = objects_avoid_duplicated  # TODO Implementar SOT-2
-        # Información del vídeo introducido.
-        self.frames_per_second = None  # TODO
-        self.height, self.width, _ = self.sequence[0].shape  # TODO
         # Estructura de datos de los objetos registrados.
         self.registered_objects = self.ObjectsRegistered(frames_to_unregister_object)
 
