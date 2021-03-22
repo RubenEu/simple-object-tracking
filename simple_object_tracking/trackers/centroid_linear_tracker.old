@@ -1,0 +1,141 @@
+import numpy as np
+from ..tracker import ObjectTracker
+
+# DEBUG
+import cv2
+from simple_object_detection.utils import set_bounding_boxes_in_image
+
+
+class CentroidLinearTracker(ObjectTracker):
+    """Seguimiento de objetos a partir de su centroide, y realizando la
+    suposición de que los objetos se mueven de manera lineal en la escena.
+
+    DESARROLLO
+    ---------------------------------
+    - Para hacer matching tener en cuenta que el objeto debe seguir una trayectoria
+    rectilínea, eso facilita el matching.
+    - Hacer matching con N frames anteriores.
+    """
+    def __init__(self, distance_tolerance=10, max_previous_frames_matching=1, *args, **kwargs):
+        """
+
+        :param distance_tolerance: distancia máxima para emparejar dos objetos en dos fotograma
+        consecutivos.
+        :param args:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        self.distance_tolerance = distance_tolerance
+        self.max_previous_frames_matching = max_previous_frames_matching
+
+    def _calculate_euclidean_distance(self, point_1, point_2):
+        # TODO: Mejorable.
+        point_1_x, point_1_y = point_1
+        point_2_x, point_2_y = point_2
+        distance = np.sqrt(
+            np.sum(
+                ((point_2_x - point_1_x)**2, (point_2_y - point_1_y)**2)
+            )
+        )
+        return distance
+
+    def _algorithm(self):
+        # Obtener los objetos iniciales (primer frame).
+        objects_initial = self._get_objects(0, self.object_detector)
+        # Asignar un identificador único.
+        last_unique_identifier = 0
+        for obj in objects_initial:
+            self.set_object_unique_id(obj, last_unique_identifier)
+            last_unique_identifier += 1
+        # Registrar los objetos.
+        self.register_frame_objects(0, objects_initial)
+        ####################
+        #  TODO: Borrar, solo debug!
+        # print(objects_initial)
+        # self.show_cv(0)
+        #####################
+        # Iterar sobre el resto de frames.
+        for proccessing_frame_id in range(1, len(self.sequence)):
+            # Paso 1. Obtener los objetos en el frame actual.
+            objects_actual = self._get_objects(proccessing_frame_id, self.object_detector)
+            actual_objects_matched_idx = np.full(len(objects_actual), False)
+            # Paso 2. Realizar emparejamiento con los objetos detectados anteriormente.
+            n_frame_previous = self.max_previous_frames_matching
+            previous_frames_range = range(max(1, proccessing_frame_id-n_frame_previous),
+                                          proccessing_frame_id)
+            # Buscar emparejamientos posibles con los n_frame_previous anteriores.
+            for previous_frame_id in previous_frames_range:
+                objects_previous = self.get_frame_objects(previous_frame_id)
+                prev_objects_matched = np.full(len(objects_previous), False)
+                # Calcular la distancia entre los objetos del frame actual y los del frame previo.
+                # Comprobar previamente que ha habido al menos alguna detección en ambos frames.
+                if len(objects_previous) and len(objects_actual):
+                    distances = np.zeros((len(objects_previous), len(objects_actual)))
+                    for i in range(len(objects_previous)):
+                        centroid_object_i = objects_previous[i].get_centroid()
+                        for j in range(len(objects_actual)):
+                            centroid_object_j = objects_actual[j].get_centroid()
+                            distances[i, j] = self._calculate_euclidean_distance(centroid_object_i,
+                                                                                 centroid_object_j)
+                    # Buscar emparejamientos entre los objetos del frame actual y los del frame
+                    # previo.
+                    # Importante: si no hace matching con el que más cerca se encuentra, ni lo
+                    # intenta con el segundo mejor ni consecutivos.
+                    for j in range(len(objects_actual)):
+                        # Distancias a la que están los objetos del objeto j.
+                        distances_with_j = distances[:, j]
+                        # TODO
+                        #  Si no se matchea con ninguno anterior, se pierde la traza del objeto.
+                        #  habría que hacerlo con N frames anteriores más!!!
+                        #  Problema de hacerlo con muchos frames: aparición de matchings que no
+                        #  se correspondan entre sí.
+                        #  Igual podría ponerse un factor de
+                        #  distancia < distance_tolerance + (num_frames_atrás * factor)
+                        # Índice del objeto del frame previo con menor distancia al objeto j.
+                        best_i_match = np.argmin(distances_with_j)
+                        # Comprobar que la distancia sea menor que una tolerancia (px).
+                        if distances[best_i_match, j] < self.distance_tolerance:
+                            # Comprobar que no se ha realizado ese emparejamiento ya.
+                            if not prev_objects_matched[best_i_match]:
+                                self.set_object_unique_id(objects_actual[j], best_i_match)
+                                # Marcar el objeto actual y previo como emparejados.
+                                actual_objects_matched_idx[j] = True
+                                prev_objects_matched[best_i_match] = True
+            # Paso 3. Registrar objetos que han aparecido nuevos.
+            objects_not_matched_idx = np.logical_not(actual_objects_matched_idx)
+            objects_not_matched = objects_actual[objects_not_matched_idx]
+            # TODO: Si la distancia de un objeto es menor que un valor,
+            #  su anchura y su longitud no difieren en más de un 5%, es que
+            #  puede ser el mismo objeto, por tanto, elegir el que mayor puntuación tiene.
+            for obj in objects_not_matched:
+                self.set_object_unique_id(obj, last_unique_identifier)
+                last_unique_identifier += 1
+            # Paso 4. Eliminar los objetos que han salido de la escena (o se han perdido).
+            # TODO: Replanear todo un poco xD? Ya que se eliminan solos al no hacerse matching
+            #  o se registran como objetos nuevos.
+            #  Tal vez mantener el registro de otra forma, no sé.
+            # Paso 5. Registrar los objetos de este frame.
+            objects_to_register = np.logical_or(actual_objects_matched_idx, objects_not_matched_idx)
+            self.register_frame_objects(proccessing_frame_id, objects_actual[objects_to_register])
+            #####################
+            # TODO: Borrar, solo debug!
+            #print(objects_actual[actual_objects_matched_idx])
+            #self.show_cv(proccessing_frame_id)
+            #####################
+
+    def show_cv(self, frame_id):
+        """TODO: BORRAR SOLO DEBUG
+        """
+        print("Mostrando del frame", frame_id)
+        image_debug = self.sequence[frame_id]
+        objects = self.get_frame_objects(frame_id)
+        image_debug = set_bounding_boxes_in_image(image_debug, objects)
+        cv2.imshow('Image',
+                   cv2.resize(
+                       cv2.cvtColor(image_debug, cv2.COLOR_RGB2BGR),
+                       (int(image_debug.shape[1] * 4 / 5),
+                        int(image_debug.shape[0] * 4 / 5))
+                   ))
+        # Esperar a pulsar escape para cerrar la ventana.
+        cv2.waitKey(0)
+        print("Cerrando ventana")
