@@ -113,7 +113,7 @@ class CentroidLinearTracker(ObjectTracker):
         self._register_initial_objects()
         ##############
         # TODO: DEBUG PURPOSES ONLY!
-        print(self.registered_objects)
+        #print(self.registered_objects)
         #self.show_cv(0)
         ##############
         # Paso 2. Emparejar, registrar, y desregistrar objetos en el resto de frames.
@@ -127,8 +127,8 @@ class CentroidLinearTracker(ObjectTracker):
             self.registered_objects.unregister_dissapeared_objects(frame_proccessing)
             ##############
             # TODO: DEBUG PURPOSES ONLY!
-            print(self.registered_objects)
-            self.show_cv(frame_proccessing)
+            #print(self.registered_objects)
+            #self.show_cv(frame_proccessing)
             ##############
 
     def show_cv(self, frame_id):

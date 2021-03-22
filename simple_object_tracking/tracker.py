@@ -119,6 +119,8 @@ class ObjectTracker:
             self.objects_uid = list()
             # Último frame en el que el objeto i-ésimo fue visto.
             self.last_frame = list()
+            # Histórico del frame y los objetos detectados que se han actualizado para ese objeto.
+            self.history = list()
             # Identificadores únicos de los objetos que han sido desregistrados.
             self.unregistered_objects = list()
             # Número de frames tras los que se eliminará un objeto que lleva sin ser visto.
@@ -144,6 +146,7 @@ class ObjectTracker:
             self.objects.append(obj)
             self.objects_uid.append(self.next_uid)
             self.last_frame.append(frame_id)
+            self.history.append([(frame_id, obj)])
             # Incrementar el identificador único siguiente.
             self.next_uid += 1
 
@@ -161,6 +164,7 @@ class ObjectTracker:
             # Actualizar el seguimiento del objeto.
             self.objects[object_uid] = obj
             self.last_frame[object_uid] = frame_id
+            self.history[object_uid].append((frame_id, obj))
 
         def unregister_dissapeared_objects(self, frame_id):
             """Elimina los objetos registrados que llevan desaparecidos
