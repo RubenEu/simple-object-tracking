@@ -60,7 +60,7 @@ def sequence_with_objects_trace(sequence, tracker):
             # Lets draw!
             for pair_point in pair_points:
                 point_1, point_2 = pair_point
-                seq_with_traces[frame_id] = cv2.line(frame, point_1, point_2, (255, 0, 0), 2)
-                seq_with_traces[frame_id] = cv2.circle(frame, point_1, 1, (0, 255, 0), 2)
+                seq_with_traces[frame_id] = cv2.line(frame, point_1, point_2, (255, 0, 0), 5)
+                seq_with_traces[frame_id] = cv2.circle(frame, point_1, 0, (0, 255, 0), 3)
     return seq_with_traces
 
