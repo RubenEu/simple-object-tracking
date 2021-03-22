@@ -37,16 +37,40 @@ def positions_in_object_tracking(objects_history, sequence):
 def sequence_with_objects_trace(sequence, tracker):
     """Dada una secuencia, dibuja todas las trazas de todos los objetos que se han podido seguir.
     """
+    class Track:
+        """Mantiene la información del seguimiento de un objeto."""
+        def __init__(self, positions, last_frame_seen, color_trace=(255, 0, 0)):
+            # Posiciones del objeto indexadas por el nº del frame.
+            self.positions = positions
+            # Último frame en el que fue visto el objeto.
+            self.last_frame_seen = last_frame_seen
+            # Color con el que se pintará este objeto.
+            self.color_trace = color_trace
+    # Copia del video para pintarlo.
     seq_with_traces = sequence.copy()
     # Extraer todos los objetos (incluso los eliminados en algún momento).
     objects_uid = tracker.registered_objects.objects_uid
+    # Crear lista con los tracks de cada objeto.
+    objects_track = list()
+    for obj_uid in objects_uid:
+        obj_history = tracker.registered_objects.history[obj_uid]
+        positions = positions_in_object_tracking(obj_history, sequence)
+        last_frame_seen = [index for index, pos in enumerate(positions) if pos is not None][-1]
+        colors = np.random.uniform(0, 255, size=(len(objects_uid), 3))
+        track = Track(positions, last_frame_seen, color_trace=colors[obj_uid])
+        objects_track.append(track)
     # Pintar en cada frame el seguimiento hasta ese frame.
     for frame_id, frame in enumerate(sequence):
         # Pintar el seguimiento para cada objeto hasta el frame_id.
         for obj_uid in objects_uid:
+            obj_track = objects_track[obj_uid]
+            frames_elapsed = frame_id - obj_track.last_frame_seen
+            # Si han pasado más de N frames desde que se siguió ese objeto, pasar al siguiente.
+            if frames_elapsed > 40:
+                continue
             obj_history = tracker.registered_objects.history[obj_uid]
             # Posiciones de ese objeto.
-            positions = positions_in_object_tracking(obj_history, sequence)
+            positions = obj_track.positions
             # Posiciones hasta el frame actual.
             positions_until_frame = positions[:frame_id+1]
             # Eliminar los frames en los que no se obtuvo su posición
@@ -59,8 +83,8 @@ def sequence_with_objects_trace(sequence, tracker):
                 pair_points.append(pair)
             # Lets draw!
             for pair_point in pair_points:
-                point_1, point_2 = pair_point
-                seq_with_traces[frame_id] = cv2.line(frame, point_1, point_2, (255, 0, 0), 5)
-                seq_with_traces[frame_id] = cv2.circle(frame, point_1, 0, (0, 255, 0), 3)
+                p1, p2 = pair_point
+                seq_with_traces[frame_id] = cv2.line(frame, p1, p2, obj_track.color_trace, 5)
+                # seq_with_traces[frame_id] = cv2.circle(frame, point_1, 0, (0, 255, 0), 3)
     return seq_with_traces
 
