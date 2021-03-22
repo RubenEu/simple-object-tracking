@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-from simple_object_detection.utils import filter_objects
+from simple_object_detection.utils import *
 
 
 class ObjectTracker:
@@ -37,7 +37,7 @@ class ObjectTracker:
                  sequence_with_information,
                  object_detector=None,
                  object_detections=None,
-                 objects_min_score=0.10,
+                 objects_min_score=0,
                  objects_classes=None,
                  objects_avoid_duplicated=False,
                  frames_to_unregister_object=5,
@@ -70,9 +70,9 @@ class ObjectTracker:
         # Asegurar que hay detecciones de tantos frames como secuencias.
         assert_msg = 'The sequence and objects detections length must be the same.'
         assert object_detections and len(object_detections) == len(self.sequence), assert_msg
-        self.objects_min_score = objects_min_score  # TODO Implementar SOT-2
-        self.objects_classes = objects_classes  # TODO Implementar SOT-2
-        self.objects_avoid_duplicated = objects_avoid_duplicated  # TODO Implementar SOT-2
+        self.objects_min_score = objects_min_score
+        self.objects_classes = objects_classes
+        self.objects_avoid_duplicated = objects_avoid_duplicated
         # Estructura de datos de los objetos registrados.
         self.registered_objects = self.ObjectsRegistered(frames_to_unregister_object)
 
@@ -84,11 +84,13 @@ class ObjectTracker:
         else:
             frame = self.sequence[frame_id]
             objects = self.object_detector.get_objects(frame)
-        # TODO: SOT-2 here!!!
-        # TODO: temporalmente se filtran los objetos con alta puntuación.
-        # Realizar la mejora en el simple-object-detection para buscar un objeto en una
-        # ventana, y así obtener el mejor objeto de esa ventana!!
-        objects = filter_objects(objects, min_score=0.1)
+        # Realizar los filtrados.
+        if self.objects_min_score:
+            objects = filter_objects_by_min_score(objects, self.objects_min_score)
+        if self.objects_classes:
+            objects = filter_objects_by_classes(objects, self.objects_classes)
+        if self.objects_avoid_duplicated:
+            objects = filter_objects_avoiding_duplicated(objects)
         return objects
 
     @abstractmethod
