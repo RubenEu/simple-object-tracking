@@ -92,7 +92,8 @@ class CentroidLinearTracker(ObjectTracker):
         :param objects_actual:
         :return: índices de los objetos actuales emparejados.
         """
-        matches_done = list() # TODO: objetos actuales que han sido emparejados!!!
+        # Lista de índices de los objetos actuales que han sido emparejados.
+        matches_done = list()
         # Obtener los objetos registrados.
         objects_with_uid_registered = self.registered_objects.objects_with_uid()
         # Comprobar que hay objetos registrados con los que emparejar.
@@ -106,49 +107,25 @@ class CentroidLinearTracker(ObjectTracker):
             for match_i, match_j in resolved_matches:
                 obj_uid = objects_uid_registered[match_i]
                 self.registered_objects.update_object(objects_actual[match_j], obj_uid, frame_actual)
-        return matches_done # TODO: objetos actuales que han sido emparejados!!!
+                matches_done.append(match_j)
+        return matches_done
+
+    def _register_not_matched_objects(self, frame_actual, objects_actual, matched_objects_ids):
+        # Registrar los objetos no emparejados.
+        for obj_id, obj in enumerate(objects_actual):
+            # Comprobar que ese objeto no ha sido emparejado.
+            if obj_id not in matched_objects_ids:
+                self.registered_objects.register_object(obj, frame_actual)
 
     def _algorithm(self):
         # Paso 1. Registrar objetos iniciales.
         self._register_initial_objects()
-        ##############
-        # TODO: DEBUG PURPOSES ONLY!
-        #print(self.registered_objects)
-        #self.show_cv(0)
-        ##############
         # Paso 2. Emparejar, registrar, y desregistrar objetos en el resto de frames.
         for frame_proccessing in range(1, len(self.sequence)):
             objects_actual = self.objects_in_frame(frame_proccessing)
             # 1. Emparejar.
-            objects_actual_matched = self._do_matches(frame_proccessing, objects_actual)
-            # 2. Registrar: TODO
-
+            objects_matched = self._do_matches(frame_proccessing, objects_actual)
+            # 2. Registrar.
+            self._register_not_matched_objects(frame_proccessing, objects_actual, objects_matched)
             # 3. Desregistrar.
             self.registered_objects.unregister_dissapeared_objects(frame_proccessing)
-            ##############
-            # TODO: DEBUG PURPOSES ONLY!
-            #print(self.registered_objects)
-            #self.show_cv(frame_proccessing)
-            ##############
-
-    def show_cv(self, frame_id):
-        """TODO: BORRAR SOLO DEBUG
-        """
-        print("Mostrando del frame", frame_id)
-        image = self.sequence[frame_id]
-        # Objetos en ese frame.
-        objects = self.objects_in_frame(frame_id)
-        # Preparar la imagen.
-        image = set_bounding_boxes_in_image(image, objects)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # Pintar un punto en cada objeto registrado.
-        for _, obj in self.registered_objects.objects_with_uid():
-            image = cv2.circle(image, obj.get_centroid(), 1, (255, 0, 0), 5)
-        new_shape = (int(image.shape[1] * 4 / 5), int(image.shape[0] * 4 / 5))
-        # Redimensionar la salida.
-        image = cv2.resize(image, new_shape)
-        # Mostrar la imagen.
-        cv2.imshow('Image', image)
-        # Esperar a pulsar escape para cerrar la ventana.
-        cv2.waitKey(0)
-
