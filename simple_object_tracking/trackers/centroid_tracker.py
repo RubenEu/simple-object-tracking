@@ -1,26 +1,30 @@
 import numpy as np
 from ..tracker import ObjectTracker
 from ..utils import calculate_euclidean_distance
-# DEBUG
-import cv2
-from simple_object_detection.utils import set_bounding_boxes_in_image
 
 
-class CentroidLinearTracker(ObjectTracker):
-    """Seguimiento de objetos a partir de su centroide, y realizando la
-    suposición de que los objetos se mueven de manera lineal en la escena.
+class CentroidTracker(ObjectTracker):
+    """Modelo de seguimiento de objetos basados en su centro.
 
-    DESARROLLO
-    ---------------------------------
-    - Para hacer matching tener en cuenta que el objeto debe seguir una trayectoria
-    rectilínea, eso facilita el matching.
-    - Hacer matching con N frames anteriores.
+    Algoritmo de seguimiento:
+    1. Registra todos los objetos detectados en el primer frame.
+    2. Para cada frame en la secuencia:
+        2.0. Obtener los objetos del frame actual.
+        2.1. Buscar los emparejamientos posibles, resolver los conflictos y emparejar, actualizando
+             la lista que mantiene el seguimiento de los objetos.
+        2.2. Registrar aquellos objetos detectados en el frame actual que no han sido emparejados.
+        2.3. Desregistrar los objetos que llevan sin detectarse un número de frames, determinado por
+        el parámetro frames_to_unregister_object.
+
+    Principales problemas:
+    - Si se detecta un objeto de manera múltiple, se genera el trazado bien, pero supone que so
+    distintos objetos los que está viendo, no uno mismo.
     """
-    def __init__(self, distance_tolerance_factor=0.05, max_previous_frames_matching=1, *args, **kwargs):
-        """
+    def __init__(self, distance_tolerance_factor=0.05, *args, **kwargs):
+        """Crea una instancia de este modelo de seguimiento.
 
-        :param distance_tolerance: factor de la distancia máxima para realizar emparejamientos.
-        consecutivos.
+        :param distance_tolerance: factor en el rango [0, 1] que indica la distancia máxima a la que
+         se podrá realizar el matching de objetos en proporción a la altura y anchura de los frames.
         :param args:
         :param kwargs:
         """
@@ -28,16 +32,38 @@ class CentroidLinearTracker(ObjectTracker):
         self.distance_tolerance_factor = distance_tolerance_factor
 
     def _register_initial_objects(self):
+        """Registra los objetos iniciales.
+        """
         # Obtener los objetos del frame 0.
-        objects_initial = self.objects_in_frame(0)
-        for obj in objects_initial:
+        for obj in self.objects_in_frame(0):
             self.registered_objects.register_object(obj, 0)
 
     def _distance_tolerance(self):
+        """Método que calcula la distancia máxima (en píxeles) con la que se considerará que un
+        objeto puede ser emparejado con otro visto en otro frame.
+
+        Para el cálculo se multiplica el factor 'distance_tolerance_factor' por el máximo entre la
+        altura y anchura.
+        """
         a = np.amax([self.frame_width, self.frame_height])
         return a * self.distance_tolerance_factor
 
     def _calculate_matches(self, objects_prev, objects_actual):
+        """Busca todos los emparejamientos posibles entre los objetos registrados (objects_prev) y
+        los objetos obtenidos en un frame (objects_actual).
+
+        Para ello se crea una matriz de len(objects_prev) x len(objects_actual) en la que se calcula
+        todas las distancias entre los objectos de objects_prev y objects_actual.
+
+        Una vez calculadas las distancias, cada uno de los objetos del frame actual se intenta
+        emparejar con alguno de los objetos de los registrados. Es decir, un objeto registrado puede
+        tener varios candidatos de los objetos del frame actual, pero cada uno de los del frame
+        actual solo tendrá un candidato de los registrados.
+
+        :param objects_prev: lista de objetos registrados.
+        :param objects_actual: numpy array de objetos detectados en el frame actual.
+        :return: lista de tuplas entre posibles emparejamientos.
+        """
         matches_found = list()
         # Comprobar previamente que hay objetos al menos algún objeto en cada lista.
         if len(objects_prev) and len(objects_actual):
@@ -62,9 +88,8 @@ class CentroidLinearTracker(ObjectTracker):
                     matches_found.append((best_i_match, j))
         return matches_found
 
-    def _resolve_matches(self, matches, objects_prev, objects_actual):
-        """
-        Un objeto previo puede tener como candidatos de emparejamiento varios objetos actuales,
+    def _resolve_matches(self, matches, objects_prev):
+        """Un objeto previo puede tener como candidatos de emparejamiento varios objetos actuales,
         para ello debe resolverse el emparejamiento.
 
         Actualmente la implementación es: el primer objeto que devuelva la implementación de
@@ -72,7 +97,6 @@ class CentroidLinearTracker(ObjectTracker):
 
         :param matches: lista de emparejamientos [(obj_prev_i, obj_act_j), ...].
         :param objects_prev: lista de objetos previos.
-        :param objects_actual: lista de objetos actuales.
         :return: lista de los matches resueltos.
         """
         resolved_matches = list()
@@ -86,11 +110,12 @@ class CentroidLinearTracker(ObjectTracker):
         return resolved_matches
 
     def _do_matches(self, frame_actual, objects_actual):
-        """
+        """Una vez se han resuelto los conflictos entre emparejamientos con un mismo objeto, se
+        deben registrar y actualizar en la lista self.registered_objects.
 
-        :param frame_actual:
-        :param objects_actual:
-        :return: índices de los objetos actuales emparejados.
+        :param frame_actual: id del frame actual.
+        :param objects_actual: lista de objetos del frame actual.
+        :return: índices de los objetos del frame actual emparejados.
         """
         # Lista de índices de los objetos actuales que han sido emparejados.
         matches_done = list()
@@ -102,7 +127,7 @@ class CentroidLinearTracker(ObjectTracker):
             # Buscar los emparejamientos.
             matches = self._calculate_matches(objects_registered, objects_actual)
             # Determinar qué emparejamientos se van a hacer.
-            resolved_matches = self._resolve_matches(matches, objects_registered, objects_actual)
+            resolved_matches = self._resolve_matches(matches, objects_registered)
             # Actualizar el registro de cada objeto emparejado.
             for match_i, match_j in resolved_matches:
                 obj_uid = objects_uid_registered[match_i]
@@ -111,6 +136,12 @@ class CentroidLinearTracker(ObjectTracker):
         return matches_done
 
     def _register_not_matched_objects(self, frame_actual, objects_actual, matched_objects_ids):
+        """Registra todos los objetos que no han sido emparejados.
+
+        :param frame_actual: id del frame con el que se está trabajando.
+        :param objects_actual: ndarray con los objetos del frame actual.
+        :param matched_objects_ids: lista con los ids de los objetos actuales registrados.
+        """
         # Registrar los objetos no emparejados.
         for obj_id, obj in enumerate(objects_actual):
             # Comprobar que ese objeto no ha sido emparejado.

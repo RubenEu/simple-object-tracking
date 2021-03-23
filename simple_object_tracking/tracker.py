@@ -1,36 +1,11 @@
-import numpy as np
 from abc import ABC, abstractmethod
 from simple_object_detection.utils import *
 
 
-class ObjectTracker:
-    """
+class ObjectTracker(ABC):
+    """Clase abstracta para la implementación de modelos de seguimiento.
 
-
-
-    EN DESARROLLO
-    ----------------------------------
-    Hay que mantener un histórico del objeto a lo largo del tiempo.
-    Saber cuántos frames hay por cada segundo.
-
-    A tener en cuenta:
-    - Comprobar que el detector de objetos se ha introducido ya inicializado,
-      puesto que algunos pueden tener parámetros especiales o lo qu sea.
-    - Filtrar por confianza!!!
-    - Se puede detectar un objeto de forma múltiple con diferentes puntuaciones,
-      habría que elegir el que más alta puntuación tenga.
-    - No tienen por qué emparejarse todos los objetos.
-
-    Posibles parámetros:
-    - Lista de modelos de detección, para realizar la detección con más de
-      una red.
-
-    - Intervalo de detección. Realizar la detección+matching cada N frames.
-
-    - Puntuación mínima que deben tener los objetos.
-
-    - Clases de los objetos que se quieren hacer seguimiento.
-
+    Para implementar un modelo se necesitará sobreescribir únicamente el método _algorithm(self).
     """
 
     def __init__(self,
@@ -40,7 +15,7 @@ class ObjectTracker:
                  objects_min_score=0,
                  objects_classes=None,
                  objects_avoid_duplicated=False,
-                 frames_to_unregister_object=5,
+                 frames_to_unregister_object=10,
                  *args,
                  **kwargs):
         """
@@ -52,14 +27,13 @@ class ObjectTracker:
         :param objects_min_score: puntuación mínima que deben tener los objetos detectados.
         :param objects_classes: clases a las que deben pertener los objetos detectados.
         :param objects_avoid_duplicated: evitar que un mismo objeto se detecte múltiples veces.
-            # TODO: Esta opción requiere implementar SOD-8.
         :param frames_to_unregister_object: número de frames sin detectar un objeto tras los cuáles
         se elimina del seguimiento.
         :param args:
         :param kwargs:
         """
         # Lista de frames (secuencia) e información sobre la secuencia (ancho, alto, fps).
-        self.frame_width, self.frame_height, self.frames_per_second, self.sequence = sequence_with_information
+        self.frame_width, self.frame_height, self.fps, self.sequence = sequence_with_information
         # Comprobar que se ha pasado un detector de objetos o la lista con las detecciones.
         assert_msg = 'You must provide an object detector or a file with detections.'
         assert object_detector or object_detections, assert_msg
@@ -70,6 +44,7 @@ class ObjectTracker:
         # Asegurar que hay detecciones de tantos frames como secuencias.
         assert_msg = 'The sequence and objects detections length must be the same.'
         assert object_detections and len(object_detections) == len(self.sequence), assert_msg
+        # Opciones de filtrado para la obteción de los objetos en un frame.
         self.objects_min_score = objects_min_score
         self.objects_classes = objects_classes
         self.objects_avoid_duplicated = objects_avoid_duplicated
@@ -77,6 +52,15 @@ class ObjectTracker:
         self.registered_objects = self.ObjectsRegistered(frames_to_unregister_object)
 
     def objects_in_frame(self, frame_id):
+        """Método para la obtención de los objetos en un frame.
+
+        Si las detecciones se encuentran precalculadas o precargadas, se obtienen directamente del
+        atributo de instancia self.object_detections, en caso de que este esté vacío, se calculan
+        en la propia llamada a este método (esto puede ser bastante lento y costoso).
+
+        :param frame_id: índice del frame del que se quieren extraer los objetos.
+        :return: ndarray de objetos detectados.
+        """
         objects = None
         # Si se han cargado ya las detecciones en todos los frames, utilizarlas.
         if self.object_detections:
@@ -95,19 +79,16 @@ class ObjectTracker:
 
     @abstractmethod
     def _algorithm(self):
-        return None
+        raise NotImplemented()
 
     def run(self):
+        """Ejecuta el algoritmo de seguimiento y calcula el registro de seguimiento de los objetos.
+        """
         self._algorithm()
 
     class ObjectsRegistered:
         """Estructura para el almacenamiento y manejo de los objetos registrados
         durante el seguimiento de objetos en una secuencia.
-
-        DESARROLLO
-        ---------------------
-        - Tener en cuenta si el objeto ha desaparecido, eliminar?
-        - Mantener un histórico de los objetos detectados.
         """
 
         def __init__(self, frames_to_unregister_object):
@@ -129,19 +110,27 @@ class ObjectTracker:
         def objects_with_uid(self, unregistered=False):
             """Devuelve todos los objetos registrados, excepto los desregistrados.
 
-            :param unregistered: TODO
+            :param unregistered: indica si se quieren devolver los objetos desregistrado también.
+            Por defecto se encuentra en False.
             :return: lista de tuplas de identificador único y objeto.
             """
-            # Función para filtrar solo los objetos que se mantienen registrados.
-            def object_with_uid_not_unregistered(obj_with_uid):
-                uid, obj = obj_with_uid
-                return uid not in self.unregistered_objects
             # Realizar las tuplas (uid, obj).
             objects_with_uid = zip(self.objects_uid, self.objects)
             # Filtrar las tuplas de objetos que se mantienen registrados.
-            return list(filter(object_with_uid_not_unregistered, objects_with_uid))
+            if not unregistered:
+                # Función para filtrar solo los objetos que se mantienen registrados.
+                def object_with_uid_not_unregistered(obj_with_uid):
+                    uid, obj = obj_with_uid
+                    return uid not in self.unregistered_objects
+                objects_with_uid = list(filter(object_with_uid_not_unregistered, objects_with_uid))
+            return objects_with_uid
 
         def register_object(self, obj, frame_id):
+            """Registra un objeto en la estructura.
+
+            :param obj: objeto detectado.
+            :param frame_id: frame en el que se detectó.
+            """
             # Almacenar el objeto en la estructura.
             self.objects.append(obj)
             self.objects_uid.append(self.next_uid)
@@ -156,7 +145,6 @@ class ObjectTracker:
             :param obj: objeto detectado.
             :param object_uid: identificador del objeto a actualizar.
             :param frame_id: índice del frame en el que se ha visto por última vez.
-            :return:
             """
             # Comprobar que no se está intentando actualizar un objeto desregistrado.
             assert_msg = 'The object {} was unregistered and can\'t be updated.'.format(object_uid)
@@ -171,7 +159,6 @@ class ObjectTracker:
             self.frames_to_unregister_object cantidad de frames.
 
             :param frame_id: frame en el que se encuentra actualmente.
-            :return:
             """
             # Recorrer todos los objetos registrados.
             for obj_uid, last_frame in zip(self.objects_uid, self.last_frame):

@@ -1,1 +1,1 @@
-from .centroid_linear_tracker import *
+from .centroid_tracker import *

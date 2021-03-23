@@ -2,13 +2,9 @@ import cv2
 import numpy as np
 
 
-def show_object_in_sequence():
-    # TODO: Dado objeto, seguirlo durante una secuencia (?
-    pass
-
-
 def calculate_euclidean_distance(point_1, point_2):
     """Calcula la distancia euclídea entre 2 puntos.
+
     :param point_1: 
     :param point_2: 
     :return: distancia euclídea.
@@ -18,13 +14,17 @@ def calculate_euclidean_distance(point_1, point_2):
     return np.linalg.norm(p - q)
 
 
-def positions_in_object_tracking(objects_history, sequence):
-    """Devuelve la lista de posiciones para cada frame en la que se vio el objeto.
+def positions_in_object_tracking(object_history, sequence):
+    """Cálculo de la lista de posiciones para cada frame en la que un objeto fue visto.
 
-    Si el objeto no fue visto en una posición, para ese índice (frame) el valor es None.
+    :param object_history: lista de tuplas del número del frame en que visto y el objeto.
+    :param sequence: secuencia de video.
+    :return: lista indexada por los frames del video. En cada posición se encuentra la posición
+    (x,y) donde se encontraba el objeto en ese instante. Si el objeto no fue visto en ese frame,
+    el valor en esa posición es None.
     """
     positions = list()
-    frame_seen, obj = zip(*objects_history)
+    frame_seen, obj = zip(*object_history)
     for frame_id in range(len(sequence)):
         if frame_id in frame_seen:
             index = frame_seen.index(frame_id)
@@ -36,6 +36,12 @@ def positions_in_object_tracking(objects_history, sequence):
 
 def sequence_with_objects_trace(sequence, tracker, max_frames_elapsed=40):
     """Dada una secuencia, dibuja todas las trazas de todos los objetos que se han podido seguir.
+
+    :param sequence: secuencia de vídeo.
+    :param tracker: objeto del modelo de seguimiento ya ejecutado.
+    :param max_frames_elapsed: número máximo de frames que deben pasar para eliminar el trazado
+    que ha realizado un objeto.
+    :return: secuencia de vídeo con las trazas de los objetos pintadas.
     """
     class Track:
         """Mantiene la información del seguimiento de un objeto."""

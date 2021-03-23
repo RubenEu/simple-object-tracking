@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='simple-object-tracker',
-    version='0.0.0',
+    version='0.0.1',
     description='Object tracker with different models and parameters.',
     author='Rubén García Rojas',
     author_email='garcia.ruben@outlook.es',
@@ -11,7 +11,5 @@ setup(
         'simple-object-detection',
         'opencv-python',
         'numpy',
-        # TODO: comprobar que las que están, realmente hagan falta.
-        # TODO: Añadir si hace falta alguna más en específico
     ]
 )
