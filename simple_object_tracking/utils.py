@@ -45,7 +45,7 @@ def sequence_with_traces(sequence: Sequence,
     for frame_id, frame in enumerate(sequence):
         # 1. Caja de información
         width, height = sequence[0].shape[1], sequence[0].shape[0]
-        box_width, box_height = min(width, 500), min(height, 80)
+        box_width, box_height = min(width, 500), min(height, 130)
         # Pintar la línea superior.
         p1, p2 = (width - box_width, height - box_height), (width, height - box_height)
         cv2.line(frame, p1, p2, (0, 255, 255), 3)
@@ -54,9 +54,12 @@ def sequence_with_traces(sequence: Sequence,
         cv2.line(frame, p1, p3, (0, 255, 255), 3)
         # Añadir texto.
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(frame, 'Consola de informacion de salida!', (p1[0] + 5, p1[1] + 23), font, 0.7, (255, 255, 255),
+        cv2.putText(frame, 'Output information console!', (p1[0] + 5, p1[1] + 23), font, 0.7, (255, 255, 255),
                     2, cv2.LINE_AA)
-        cv2.putText(frame, f'Frame: {frame_id}', (p1[0] + 5, p1[1] + 50), font, 0.55, (255, 255, 255),
+        cv2.putText(frame, f'Frame: {frame_id}.', (p1[0] + 5, p1[1] + 52), font, 0.65, (255, 255, 255),
+                    1, cv2.LINE_AA)
+        text = f'Timestamp: {timestamps[frame_id]/1000}s ({timestamps[frame_id]}ms)'
+        cv2.putText(frame, text, (p1[0] + 5, p1[1] + 80), font, 0.65, (255, 255, 255),
                     1, cv2.LINE_AA)
         # 2. Trazado.
         for object_uid in range(len(objects_stored)):
