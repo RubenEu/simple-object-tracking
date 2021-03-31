@@ -64,7 +64,11 @@ class ObjectTracker(ABC):
         :param frame_id: índice del frame del que se quieren extraer los objetos.
         :return: lista de los objetos detectados en ese frame.
         """
-        objects_in_frame = self.object_detections[frame_id]
+        # Obtener los objetos del detector si no hay detecciones precargadas.
+        if self.object_detections is None:
+            objects_in_frame = self.object_detector.get_objects(self.sequence[frame_id])
+        else:
+            objects_in_frame = self.object_detections[frame_id]
         # Comprobar que se ha establecido una lista de filtros.
         if isinstance(self.objects_filters, list):
             for filter_function in self.objects_filters:
