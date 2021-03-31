@@ -69,7 +69,8 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
             position = (top_left_corner_x, top_left_corner_y - 7)
             cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
             # Object label text.
-            text = f'{object_detection.label}'
+            score = int(object_detection.score * 100)
+            text = f'{object_detection.label} {score}'
             position = (top_left_corner_x, top_left_corner_y - 20)
             cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
             # Object position text.
