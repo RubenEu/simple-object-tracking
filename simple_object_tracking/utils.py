@@ -1,9 +1,7 @@
 import numpy as np
 import cv2
-from typing import List
 
 from simple_object_detection.typing import Point2D
-from simple_object_detection.object import Object
 
 from simple_object_tracking.typing import Sequence, Timestamps
 from simple_object_tracking.datastructures import SequenceObjects
@@ -21,7 +19,8 @@ def calculate_euclidean_distance(point_1: Point2D, point_2: Point2D) -> float:
     return np.linalg.norm(p - q)
 
 
-def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
+def sequence_with_traces(sequence: Sequence,
+                         timestamps: Timestamps,
                          objects_stored: SequenceObjects,
                          frames_missing_to_remove_trace=30):
     """Genera una secuencia de vídeo con los trazados del seguimiento de los objetos.

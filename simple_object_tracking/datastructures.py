@@ -8,8 +8,6 @@ from simple_object_tracking.typing import (ObjectTracking,
                                            ObjectWithUID,
                                            ObjectWithUIDFrame,
                                            ObjectHistory,
-                                           ObjectFrame,
-                                           ObjectTimestamp,
                                            FPS,
                                            Timestamps)
 

@@ -4,7 +4,6 @@ from simple_object_detection.object import Object
 
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import calculate_euclidean_distance
-from simple_object_tracking.typing import Width, Height, FPS
 
 
 class CentroidTracker(ObjectTracker):
