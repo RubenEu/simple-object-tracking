@@ -44,7 +44,22 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
     colors = np.random.uniform(0, 255, size=(len(objects_stored), 3))
     # Iterar sobre los frames de la secuencia.
     for frame_id, frame in enumerate(sequence):
-        # 1. Trazado.
+        # 1. Caja de información
+        width, height = sequence[0].shape[1], sequence[0].shape[0]
+        box_width, box_height = min(width, 500), min(height, 80)
+        # Pintar la línea superior.
+        p1, p2 = (width - box_width, height - box_height), (width, height - box_height)
+        cv2.line(frame, p1, p2, (0, 255, 255), 3)
+        # Pintar la linea izquierda.
+        p3 = (width - box_width, height)
+        cv2.line(frame, p1, p3, (0, 255, 255), 3)
+        # Añadir texto.
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(frame, 'Consola de informacion de salida!', (p1[0] + 5, p1[1] + 23), font, 0.7, (255, 255, 255),
+                    2, cv2.LINE_AA)
+        cv2.putText(frame, f'Frame: {frame_id}', (p1[0] + 5, p1[1] + 50), font, 0.55, (255, 255, 255),
+                    1, cv2.LINE_AA)
+        # 2. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
             # No dibujar trazado si el objeto lleva desaparecido más de 'frames_missing_to_remove_trace' frames.
@@ -62,7 +77,7 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
                     cv2.line(frame, object_detection_prev.center, object_detection.center,
                              colors[object_uid], 2)
                 object_history_index += 1
-        # 2. Bounding box
+        # 3. Bounding box objectos
         font = cv2.FONT_HERSHEY_SIMPLEX
         for object_uid, object_detection in objects_stored.objects_frame(frame_id):
             top_left_corner = object_detection.bounding_box[0]
@@ -83,21 +98,6 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
             text = f'{object_detection.center}'
             position = (top_left_corner_x, top_left_corner_y - 33)
             cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
-        # 3. Caja de información
-        width, height = sequence[0].shape[1], sequence[0].shape[0]
-        box_width, box_height = int(0.75 * width), int(0.19 * height)
-        # Pintar la línea superior.
-        p1, p2 = (width - box_width, height - box_height), (width, height - box_height)
-        cv2.line(frame, p1, p2, (0, 255, 255), 3)
-        # Pintar la linea izquierda.
-        p3 = (width - box_width, height)
-        cv2.line(frame, p1, p3, (0, 255, 255), 3)
-        # Añadir texto.
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(frame, 'Consola de informacion de salida!', (p1[0] + 5, p1[1] + 23), font, 0.7, (255, 255, 255),
-                    2, cv2.LINE_AA)
-        cv2.putText(frame, f'Frame: {frame_id}', (p1[0] + 5, p1[1] + 50), font, 0.55, (255, 255, 255),
-                    1, cv2.LINE_AA)
     return sequence
 
 
