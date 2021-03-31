@@ -85,44 +85,10 @@ class CentroidTracker(ObjectTracker):
                     )
                     object_registered_uids_matched.append(object_registered_uid)
                     object_candidates_ids_matched.append(minimum_distance_candidate_index)
-                    # Eliminar de la lista de candidatos para registrar luego aquellos que no han sido emparejados.
-                    # TODO: habría que marcarlos al acabar la iteración ,pq estamos editando la lista que se está
-                    #  ejecutando.
-                    # objects_candidates.pop(minimum_distance_candidate_index)
-                    # # Si se acabaron los candidatos, pasar al siguiente frame.
-                    # if len(objects_candidates) == 0:
-                    #     continue
-
-
-
-                #     # TODO: Poner todas las distancias y elegir la mejor, del tirón. Sin tanto lío wtf.
-                #     distance = calculate_euclidean_distance(object_registered_detected.center, candidate_obj.center)
-                #     # Se encuentra a una distancia que podría ser un posible emparejamiento.
-                #     if distance <= self.max_distance_allowed:
-                #         # Existe un candidato y el actual tiene menor distancia.
-                #         p = best_actual_candidate_id is not None and distance < best_actual_candidate_distance
-                #         # No existe mejor candidato aún.
-                #         q = best_actual_candidate_id is None
-                #         if p or q:
-                #             best_actual_candidate_id = candidate_id
-                #             best_actual_candidate_distance = distance
-                # # Si hay candidato disponible, hacer el emparejamiento.
-                # if best_actual_candidate_id is not None:
-                #     # Hacer el emparejamiento.
-                #     self.objects.update_object(
-                #         objects_candidates[best_actual_candidate_id],
-                #         object_registered_uid,
-                #         frame_actual
-                #     )
-                #     # Eliminar de la lista de candidatos para registrar luego aquellos que no han sido emparejados.
-                #     objects_candidates.pop(best_actual_candidate_id)
-                #     # Eliminar de la lista de registrados en este frame para evitar que se le empareje más de uno de
-                #     # los candidatos.
-                #     # TODO: esto debería ir bien... Q_Q
-                #     # objects_registered.pop(object_registered_id)
             # 2. Registrar objetos no emparejados.
-            for candidate_not_matched in objects_candidates:
-                self.objects.register_object(candidate_not_matched, frame_actual)
+            for object_candidate_id, object_candidate_detection in enumerate(objects_candidates):
+                if object_candidate_id not in object_candidates_ids_matched:
+                    self.objects.register_object(object_candidate_detection, frame_actual)
             # 3. Desregistrar objetos desaparecidos.
             self.objects.unregister_missing_objects(
                 frame_actual,
