@@ -4,7 +4,7 @@ from simple_object_detection.object import Object
 
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import calculate_euclidean_distance
-from simple_object_tracking.typing import DistanceToleranceFunction, Width, Height, FPS
+from simple_object_tracking.typing import Width, Height, FPS
 
 
 class CentroidTracker(ObjectTracker):
@@ -25,22 +25,9 @@ class CentroidTracker(ObjectTracker):
     distintos objetos los que está viendo, no uno mismo.
     """
 
-    def __init__(self,
-                 distance_tolerance_f: DistanceToleranceFunction = lambda w, h, f: 0.15 * max(w, h),
-                 *args,
-                 **kwargs):
-        """Crea una instancia de este modelo de seguimiento.
-
-        :param distance_tolerance_f: función que recibe por parámetro el ancho, alto y fps de la
-        secuencia y devuelve la distancia máxima a la que puede estar un objeto para ser considerado
-        como un emparejamiento posible.
-        :param args:
-        :param kwargs:
-        """
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.distance_tolerance_function = distance_tolerance_f
-        self.max_distance_allowed = distance_tolerance_f(self.frame_width, self.frame_height,
-                                                         self.fps)
+        self.max_distance_allowed = 0.10 * max(self.frame_width, self.frame_height)
 
     def _matching_step(self,
                        objs_registered: List[Tuple[int, int, Object]],

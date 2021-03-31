@@ -28,5 +28,3 @@ SequenceObjectsDetections = List[List[Object]]
 # Función que recibe una lista de objetos y devuelve una lista de objetos.
 ObjectsFilterFunction = Callable[[List[Object]], List[Object]]
 # Función para el cálculo de la distancia máxima a la que puede estar un objeto para ser emparejado.
-# TODO: Añadirle la cantidad de frames elapsed.
-DistanceToleranceFunction = Callable[[Width, Height, FPS], float]
