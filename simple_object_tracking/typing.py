@@ -9,6 +9,7 @@ FrameID = int
 Timestamp = int
 RegisteredStatus = bool
 ObjectWithUID = Tuple[ObjectUID, Object]
+ObjectWithUIDFrame = Tuple[ObjectUID, FrameID, Object]
 ObjectFrame = Tuple[FrameID, Object]
 ObjectTimestamp = Tuple[Timestamp, Object]
 ObjectHistory = List[ObjectFrame]

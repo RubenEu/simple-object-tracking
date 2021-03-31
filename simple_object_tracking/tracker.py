@@ -64,7 +64,12 @@ class ObjectTracker(ABC):
         :param frame_id: índice del frame del que se quieren extraer los objetos.
         :return: lista de los objetos detectados en ese frame.
         """
-        return self.object_detections[frame_id]
+        objects_in_frame = self.object_detections[frame_id]
+        # Comprobar que se ha establecido una lista de filtros.
+        if isinstance(self.objects_filters, list):
+            for filter_function in self.objects_filters:
+                objects_in_frame = filter_function(objects_in_frame)
+        return objects_in_frame
 
     def preload_objects(self) -> None:
         """Realiza la detección de todos los objetos a lo largo de la secuencia y los almacena en

@@ -24,7 +24,7 @@ class CentroidTracker(ObjectTracker):
     """
 
     def __init__(self,
-                 distance_tolerance_f: DistanceToleranceFunction = lambda w, h, f: 0.05 * max(w, h),
+                 distance_tolerance_f: DistanceToleranceFunction = lambda w, h, f: 0.15 * max(w, h),
                  *args,
                  **kwargs):
         """Crea una instancia de este modelo de seguimiento.
@@ -48,16 +48,18 @@ class CentroidTracker(ObjectTracker):
         for frame_actual in range(1, len(self.sequence)):
             objects_actual = self.objects_in_frame(frame_actual)
             # 1. Emparejar objetos.
+            # Objetos registrados hasta el momento.
+            objects_registered = self.objects.objects()
+            # Objetos detectados en el frame actual, candidatos para emparejar con alguno de los registrados.
+            objects_candidates = self.objects_in_frame(frame_actual)
             # Para cada uno de los objetos registrados, buscar cuál puede ser su candidato.
             # El mejor candidato vendrá determinado por el que se encuentre a menor distancia.
-            objects_registered = self.objects.objects()
-            objects_candidates = self.objects_in_frame(frame_actual)
-            for object_registered_id, object_registered in objects_registered:
+            for object_registered_id, object_registered in enumerate(objects_registered):
+                object_registered_uid, object_registered_last_frame_seen, object_registered_detected = object_registered
                 best_actual_candidate_id = None
                 best_actual_candidate_distance = None
                 for candidate_id, candidate_obj in enumerate(objects_candidates):
-                    distance = calculate_euclidean_distance(object_registered.center,
-                                                            candidate_obj.center)
+                    distance = calculate_euclidean_distance(object_registered_detected.center, candidate_obj.center)
                     # Se encuentra a una distancia que podría ser un posible emparejamiento.
                     if distance <= self.max_distance_allowed:
                         # Existe un candidato y el actual tiene menor distancia.
@@ -68,15 +70,18 @@ class CentroidTracker(ObjectTracker):
                             best_actual_candidate_id = candidate_id
                             best_actual_candidate_distance = distance
                 # Si hay candidato disponible, hacer el emparejamiento.
-                if best_actual_candidate_id:
+                if best_actual_candidate_id is not None:
                     # Hacer el emparejamiento.
                     self.objects.update_object(
                         objects_candidates[best_actual_candidate_id],
-                        object_registered_id,
+                        object_registered_uid,
                         frame_actual
                     )
-                    # Eliminar de la lista de candidatos.
+                    # Eliminar de la lista de candidatos para registrar luego aquellos que no han sido emparejados.
                     objects_candidates.pop(best_actual_candidate_id)
+                    # Eliminar de la lista de registrados en este frame para evitar que se le empareje más de uno de
+                    # los candidatos.
+                    objects_registered.pop(object_registered_id)
             # 2. Registrar objetos no emparejados.
             for candidate_not_matched in objects_candidates:
                 self.objects.register_object(candidate_not_matched, frame_actual)

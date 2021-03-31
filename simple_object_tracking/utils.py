@@ -42,11 +42,12 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
     colors = np.random.uniform(0, 255, size=(len(objects_stored), 3))
     # Iterar sobre los frames de la secuencia.
     for frame_id, frame in enumerate(sequence):
-        # Pintar la información de la trayectoria de cada objeto hasta el frame actual.
+        # 1. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
             # Iterar sobre las detecciones del objeto hasta el frame actual.
             object_history_index, object_frame = 1, 0
+            # Obtener la detección previa y siguiente para realizar el trazado.
             while object_history_index < len(object_history) and object_frame <= frame_id:
                 object_frame_prev, object_detection_prev = object_history[object_history_index-1]
                 object_frame, object_detection = object_history[object_history_index]
@@ -54,13 +55,40 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
                 if object_frame <= frame_id:
                     cv2.line(frame, object_detection_prev.center, object_detection.center,
                              colors[object_uid], 2)
-                # Solo dibujar la bounding box si es el frame actual.
-                if object_frame == frame_id:
-                    top_left_corner = object_detection.bounding_box[0]
-                    bottom_right_corner = object_detection.bounding_box[2]
-                    cv2.rectangle(frame, top_left_corner, bottom_right_corner, colors[object_uid],
-                                  3)
                 object_history_index += 1
+        # 2. Bounding box
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        for object_uid, object_detection in objects_stored.objects_frame(frame_id):
+            top_left_corner = object_detection.bounding_box[0]
+            bottom_right_corner = object_detection.bounding_box[2]
+            cv2.rectangle(frame, top_left_corner, bottom_right_corner, colors[object_uid],
+                          2)
+            # Object UID text.
+            text = f'UID: {object_uid}'
+            top_left_corner_x, top_left_corner_y = top_left_corner
+            position = (top_left_corner_x, top_left_corner_y - 7)
+            cv2.putText(frame, text, position, font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            # Object label text.
+            text = f'{object_detection.label}'
+            position = (top_left_corner_x, top_left_corner_y - 14)
+            cv2.putText(frame, text, position, font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        # 3. Caja de información
+        width, height = sequence[0].shape[1], sequence[0].shape[0]
+        box_width, box_height = int(0.75 * width), int(0.19 * height)
+        # Pintar la línea superior.
+        p1, p2 = (width - box_width, height - box_height), (width, height - box_height)
+        cv2.line(frame, p1, p2, (0, 255, 255), 3)
+        # Pintar la linea izquierda.
+        p3 = (width - box_width, height)
+        cv2.line(frame, p1, p3, (0, 255, 255), 3)
+        # Añadir texto.
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(frame, 'Consola de informacion de salida!', (p1[0] + 5, p1[1] + 23), font, 0.7, (255, 255, 255),
+                    2, cv2.LINE_AA)
+        cv2.putText(frame, f'Frame: {frame_id}', (p1[0] + 5, p1[1] + 50), font, 0.55, (255, 255, 255),
+                    1, cv2.LINE_AA)
+
+
     return sequence
 
 

@@ -6,6 +6,7 @@ from simple_object_detection.typing import Point2D
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
 from simple_object_tracking.typing import (ObjectTracking,
                                            ObjectWithUID,
+                                           ObjectWithUIDFrame,
                                            ObjectHistory,
                                            ObjectFrame,
                                            ObjectTimestamp,
@@ -87,7 +88,7 @@ class SequenceObjects:
                 self._stored_objects[uid] = (uid, False, history)
 
     def objects_frame(self, frame_id: int) -> List[ObjectWithUID]:
-        """Lista de objetos en un frame.
+        """Crea una lista de los objetos que hay en un frame.
 
         :param frame_id: identificador del frame del que se quiere obtener los objetos registrados.
         :return: lista de pares de identificador del objeto y objeto.
@@ -139,7 +140,7 @@ class SequenceObjects:
         object_history = self.object_uid(object_uid)
         return [(self.sequence_timestamps[frame], obj.center) for frame, obj in object_history]
 
-    def objects(self) -> List[ObjectFrame]:
+    def objects(self) -> List[ObjectWithUIDFrame]:
         """
         Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
 
@@ -152,7 +153,7 @@ class SequenceObjects:
             # Añadir solo si está como registrado:
             if status:
                 last_frame_seen, last_object_detection = history[-1]
-                objects.append((last_frame_seen, last_object_detection))
+                objects.append((uid, last_frame_seen, last_object_detection))
         return objects
 
     def next_uid(self) -> int:
