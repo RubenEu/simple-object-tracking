@@ -22,7 +22,8 @@ def calculate_euclidean_distance(point_1: Point2D, point_2: Point2D) -> float:
 
 
 def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
-                         objects_stored: SequenceObjects):
+                         objects_stored: SequenceObjects,
+                         frames_missing_to_remove_trace=30):
     """Genera una secuencia de vídeo con los trazados del seguimiento de los objetos.
 
     Además, se mantendrá una caja delimitadora con cada uno de los objetos detectados en ese frame,
@@ -34,6 +35,7 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
     :param sequence: secuencia de video
     :param timestamps: lista de marcas de tiempo indexada por frame.
     :param objects_stored: almacenamiento e información de los objetos de la secuencia.
+    :param frames_missing_to_remove_trace: Cantidad de frames que tienen pasar para eliminar el trazado del objeto.
     :return: secuencia de vídeo con la información plasmada en él.
     """
     # Copiar la secuencia para no editar la misma que se pasa por parámetro.
@@ -45,6 +47,10 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
         # 1. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
+            # No dibujar trazado si el objeto lleva desaparecido más de 'frames_missing_to_remove_trace' frames.
+            frames_elapsed = frame_id - object_history[-1][0]
+            if frames_elapsed > frames_missing_to_remove_trace:
+                continue
             # Iterar sobre las detecciones del objeto hasta el frame actual.
             object_history_index, object_frame = 1, 0
             # Obtener la detección previa y siguiente para realizar el trazado.
@@ -70,7 +76,7 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
             cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
             # Object label text.
             score = int(object_detection.score * 100)
-            text = f'{object_detection.label} {score}'
+            text = f'{object_detection.label} {score}%'
             position = (top_left_corner_x, top_left_corner_y - 20)
             cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
             # Object position text.
@@ -92,8 +98,6 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
                     2, cv2.LINE_AA)
         cv2.putText(frame, f'Frame: {frame_id}', (p1[0] + 5, p1[1] + 50), font, 0.55, (255, 255, 255),
                     1, cv2.LINE_AA)
-
-
     return sequence
 
 
