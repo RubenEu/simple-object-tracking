@@ -46,48 +46,43 @@ class CentroidTracker(ObjectTracker):
             self.objects.register_object(object_detected, 0)
         # Paso 2. Emparejar, registrar, y desregistrar objetos en el resto de frames.
         for frame_actual in range(1, len(self.sequence)):
-            objects_actual = self.objects_in_frame(frame_actual)
             # 1. Emparejar objetos.
             # Objetos registrados hasta el momento.
-            objects_registered = self.objects.objects()
-            object_registered_uids_matched = list()
+            objs_registered = self.objects.objects()
+            objs_registered_uids_matched = list()
             # Objetos detectados en el frame actual, candidatos para emparejar con alguno de los registrados.
-            objects_candidates = self.objects_in_frame(frame_actual)
-            object_candidates_ids_matched = list()
-            # Si no hubo ningún candidato, pasar a la siguiente iteración.
-            if len(objects_candidates) == 0:
+            objs_actual = self.objects_in_frame(frame_actual)
+            objs_actual_ids_matched = list()
+            # Si no hubo ningún objeto en el frame actual, pasar a la siguiente iteración.
+            if len(objs_actual) == 0:
                 continue
-            # Para cada uno de los objetos registrados, buscar cuál puede ser su candidato.
-            # El mejor candidato vendrá determinado por el que se encuentre a menor distancia.
-            for object_registered_id, object_registered in enumerate(objects_registered):
-                object_registered_uid, object_registered_last_frame_seen, object_registered_detected = object_registered
-                best_actual_candidate_id = None
-                best_actual_candidate_distance = None
-                distances_to_object_registered = list()
-                for candidate_id, candidate_obj in enumerate(objects_candidates):
-                    # TODO: Si ya ha hecho matching con el que menos distancia tiene, ir a por el segundo con menos
-                    #  distancia.
-                    # TODO: Importante que no se emparejen más de un candidato a uno mismo registrado!
-                    # Distancias de cada candidato al objeto registrado actual.
-                    distance = calculate_euclidean_distance(object_registered_detected.center, candidate_obj.center)
-                    distances_to_object_registered.append(distance)
-                minimum_distance_candidate = min(distances_to_object_registered)
-                minimum_distance_candidate_index = distances_to_object_registered.index(minimum_distance_candidate)
-                not_matched = minimum_distance_candidate_index not in object_candidates_ids_matched and (
-                    object_registered_uid not in object_registered_uids_matched
-                )
-                if not_matched and minimum_distance_candidate <= self.max_distance_allowed:
+            # Para cada uno de los objetos actuales, buscar con cuál de los objetos registrados emparejar.
+            for obj_actual_id, obj_actual_detection in enumerate(objs_actual):
+                distances_to_objs_actual = list()
+                # Calcular las distancias de los objetos registrados al objeto actual detectado.
+                for obj_registered_id, obj_registered in enumerate(objs_registered):
+                    obj_registered_uid, obj_registered_last_frame_seen, obj_registered_detected = obj_registered
+                    distance = calculate_euclidean_distance(obj_registered_detected.center, obj_actual_detection.center)
+                    distances_to_objs_actual.append(distance)
+                # Busca la distancia mínima.
+                min_distance = min(distances_to_objs_actual)
+                min_distance_index = distances_to_objs_actual.index(min_distance)
+                # Comprueba que no se ha realizado el emparejamiento del objeto registrado con alguno de los actuales.
+                not_matched = min_distance_index not in objs_registered_uids_matched
+                # TODO: Si no se puede realizar el emparejamiento con el primero que está a menos distancia,
+                #  se podría probar con los siguientes...
+                if not_matched and min_distance <= self.max_distance_allowed:
                     # Hacer el emparejamiento.
                     self.objects.update_object(
-                        objects_candidates[minimum_distance_candidate_index],
-                        object_registered_uid,
+                        objs_actual[obj_actual_id],
+                        objs_registered[min_distance_index][0],
                         frame_actual
                     )
-                    object_registered_uids_matched.append(object_registered_uid)
-                    object_candidates_ids_matched.append(minimum_distance_candidate_index)
+                    objs_registered_uids_matched.append(min_distance_index)
+                    objs_actual_ids_matched.append(obj_actual_id)
             # 2. Registrar objetos no emparejados.
-            for object_candidate_id, object_candidate_detection in enumerate(objects_candidates):
-                if object_candidate_id not in object_candidates_ids_matched:
+            for obj_actual_id, object_candidate_detection in enumerate(objs_actual):
+                if obj_actual_id not in objs_actual_ids_matched:
                     self.objects.register_object(object_candidate_detection, frame_actual)
             # 3. Desregistrar objetos desaparecidos.
             self.objects.unregister_missing_objects(
