@@ -46,7 +46,7 @@ class ObjectTracker(ABC):
         # Estructura de datos de los objetos almacenados.
         self.objects = SequenceObjects(len(self.sequence), self.fps, self.timestamps)
         # Comprobaciones
-        if not object_detector and not object_detections:
+        if object_detector is None and object_detections is None:
             raise SimpleObjectTrackingException('You must provide and object detector or list with '
                                                 'detections per frame preloaded.')
 

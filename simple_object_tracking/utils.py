@@ -67,11 +67,15 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
             text = f'UID: {object_uid}'
             top_left_corner_x, top_left_corner_y = top_left_corner
             position = (top_left_corner_x, top_left_corner_y - 7)
-            cv2.putText(frame, text, position, font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
             # Object label text.
             text = f'{object_detection.label}'
-            position = (top_left_corner_x, top_left_corner_y - 14)
-            cv2.putText(frame, text, position, font, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            position = (top_left_corner_x, top_left_corner_y - 20)
+            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+            # Object position text.
+            text = f'{object_detection.center}'
+            position = (top_left_corner_x, top_left_corner_y - 33)
+            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
         # 3. Caja de información
         width, height = sequence[0].shape[1], sequence[0].shape[0]
         box_width, box_height = int(0.75 * width), int(0.19 * height)
