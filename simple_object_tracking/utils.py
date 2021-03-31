@@ -37,7 +37,7 @@ def sequence_with_traces(sequence: Sequence, timestamps: Timestamps,
     :return: secuencia de vídeo con la información plasmada en él.
     """
     # Copiar la secuencia para no editar la misma que se pasa por parámetro.
-    sequence = sequence.copy()
+    sequence = [frame.copy() for frame in sequence]
     # Generar colores aleatorios.
     colors = np.random.uniform(0, 255, size=(len(objects_stored), 3))
     # Iterar sobre los frames de la secuencia.
