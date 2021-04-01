@@ -77,7 +77,7 @@ def sequence_with_traces(sequence: Sequence,
                 # Solo dibujar trazado si es anterior al frame actual.
                 if object_frame <= frame_id:
                     cv2.line(frame, object_detection_prev.center, object_detection.center,
-                             colors[object_uid], 2)
+                             colors[object_uid], 2, cv2.LINE_AA)
                 object_history_index += 1
         # 3. Bounding box objectos
         font = cv2.FONT_HERSHEY_SIMPLEX
@@ -95,16 +95,16 @@ def sequence_with_traces(sequence: Sequence,
             text = f'UID: {object_uid}'
             top_left_corner_x, top_left_corner_y = top_left_corner
             position = (top_left_corner_x, top_left_corner_y - 7)
-            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, text, position, font, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
             # Object label text.
             score = int(object_detection.score * 100)
             text = f'{object_detection.label} {score}%'
             position = (top_left_corner_x, top_left_corner_y - 20)
-            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, text, position, font, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
             # Object position text.
             text = f'{object_detection.center}'
             position = (top_left_corner_x, top_left_corner_y - 33)
-            cv2.putText(frame, text, position, font, 0.4, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(frame, text, position, font, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
     return sequence
 
 
