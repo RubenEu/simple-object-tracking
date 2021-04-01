@@ -82,10 +82,15 @@ def sequence_with_traces(sequence: Sequence,
         # 3. Bounding box objectos
         font = cv2.FONT_HERSHEY_SIMPLEX
         for object_uid, object_detection in objects_stored.objects_frame(frame_id):
-            top_left_corner = object_detection.bounding_box[0]
-            bottom_right_corner = object_detection.bounding_box[2]
-            cv2.rectangle(frame, top_left_corner, bottom_right_corner, colors[object_uid],
-                          2)
+            p1 = top_left_corner = object_detection.bounding_box[0]
+            p2 = top_right_corner = object_detection.bounding_box[1]
+            p3 = bottom_right_corner = object_detection.bounding_box[2]
+            p4 = bottom_left_corner = object_detection.bounding_box[3]
+            # cv2.rectangle(frame, top_left_corner, bottom_right_corner, colors[object_uid], 2)
+            cv2.line(frame, p1, p2, colors[object_uid], 2, cv2.LINE_AA)
+            cv2.line(frame, p2, p3, colors[object_uid], 2, cv2.LINE_AA)
+            cv2.line(frame, p3, p4, colors[object_uid], 2, cv2.LINE_AA)
+            cv2.line(frame, p4, p1, colors[object_uid], 2, cv2.LINE_AA)
             # Object UID text.
             text = f'UID: {object_uid}'
             top_left_corner_x, top_left_corner_y = top_left_corner
