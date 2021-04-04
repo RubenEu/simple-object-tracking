@@ -22,7 +22,7 @@ def calculate_euclidean_distance(point_1: Point2D, point_2: Point2D) -> float:
 def sequence_with_traces(sequence: Sequence,
                          timestamps: Timestamps,
                          objects_stored: SequenceObjects,
-                         frames_missing_to_remove_trace=30):
+                         frames_missing_to_remove_trace: int = 30) -> Sequence:
     """Genera una secuencia de vídeo con los trazados del seguimiento de los objetos.
 
     Además, se mantendrá una caja delimitadora con cada uno de los objetos detectados en ese frame,
@@ -64,7 +64,8 @@ def sequence_with_traces(sequence: Sequence,
         # 2. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
-            # No dibujar trazado si el objeto lleva desaparecido más de 'frames_missing_to_remove_trace' frames.
+            # No dibujar trazado si el objeto lleva desaparecido más de
+            # 'frames_missing_to_remove_trace' frames.
             frames_elapsed = frame_id - object_history[-1][0]
             if frames_elapsed > frames_missing_to_remove_trace:
                 continue
@@ -86,7 +87,6 @@ def sequence_with_traces(sequence: Sequence,
             p2 = top_right_corner = object_detection.bounding_box[1]
             p3 = bottom_right_corner = object_detection.bounding_box[2]
             p4 = bottom_left_corner = object_detection.bounding_box[3]
-            # cv2.rectangle(frame, top_left_corner, bottom_right_corner, colors[object_uid], 2)
             cv2.line(frame, p1, p2, colors[object_uid], 2, cv2.LINE_AA)
             cv2.line(frame, p2, p3, colors[object_uid], 2, cv2.LINE_AA)
             cv2.line(frame, p3, p4, colors[object_uid], 2, cv2.LINE_AA)
