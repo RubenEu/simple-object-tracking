@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from simple_object_detection.detection_model import DetectionModel
+from simple_object_detection.utils import generate_detections_in_sequence
 
 from simple_object_tracking.datastructures import SequenceObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
@@ -9,7 +10,8 @@ from simple_object_tracking.typing import (SequenceInformation,
                                            SequenceObjectsDetections,
                                            ObjectsFilterFunction,
                                            FrameID,
-                                           Object)
+                                           Object,
+                                           Image)
 
 
 class ObjectTracker(ABC):
@@ -75,11 +77,14 @@ class ObjectTracker(ABC):
                 objects_in_frame = filter_function(objects_in_frame)
         return objects_in_frame
 
-    def preload_objects(self) -> None:
+    def preload_objects(self, mask: Image = None) -> None:
         """Realiza la detección de todos los objetos a lo largo de la secuencia y los almacena en
         el atributo de instancia self.object_detections.
         """
-        ...  # TODO
+        if self.object_detector is None:
+            raise SimpleObjectTrackingException('The object detector network is None.')
+        self.object_detections = generate_detections_in_sequence(self.object_detector,
+                                                                 self.sequence, mask)
 
     def run(self) -> None:
         """Ejecuta el algoritmo de seguimiento y calcula el registro de seguimiento de los objetos.
