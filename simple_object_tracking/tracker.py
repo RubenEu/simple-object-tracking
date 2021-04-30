@@ -81,8 +81,8 @@ class ObjectTracker(ABC):
         """
         if self.object_detector is None:
             raise SimpleObjectTrackingException('The object detector network is None.')
-        self.object_detections = generate_detections_in_sequence(self.object_detector,
-                                                                 self.sequence, mask)
+        self.object_detections = generate_objects_detections(self.object_detector,
+                                                             self.sequence, mask)
 
     def run(self) -> None:
         """Ejecuta el algoritmo de seguimiento y calcula el registro de seguimiento de los objetos.
