@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from simple_object_detection.detection_model import DetectionModel
-from simple_object_detection.utils import generate_objects_detections, Sequence
+from simple_object_detection.utils import generate_objects_detections, StreamSequence
 
 from simple_object_tracking.datastructures import SequenceObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
@@ -20,7 +20,7 @@ class ObjectTracker(ABC):
     """
 
     def __init__(self,
-                 sequence: Sequence,
+                 sequence: StreamSequence,
                  object_detector: DetectionModel = None,
                  object_detections: SequenceObjectsDetections = None,
                  objects_filters: List[ObjectsFilterFunction] = None,

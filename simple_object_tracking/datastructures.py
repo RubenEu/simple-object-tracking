@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 from simple_object_detection.object import Object
 from simple_object_detection.typing import Point2D
-from simple_object_detection.utils import Sequence
+from simple_object_detection.utils import StreamSequence
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
 from simple_object_tracking.typing import (ObjectTracking,
@@ -18,7 +18,7 @@ class SequenceObjects:
     TODO: Mejorar la clase. Plantear si listas enlazadas o arraylists
       Eliminar tanta tupla... usar mejor clases o namedtuples.
     """
-    def __init__(self, sequence: Sequence):
+    def __init__(self, sequence: StreamSequence):
         """
 
         :param sequence: secuencia de vídeo con la información de él.
