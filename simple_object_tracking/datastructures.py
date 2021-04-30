@@ -2,31 +2,29 @@ from typing import List, Tuple
 
 from simple_object_detection.object import Object
 from simple_object_detection.typing import Point2D
+from simple_object_detection.utils import Sequence
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
 from simple_object_tracking.typing import (ObjectTracking,
                                            ObjectWithUID,
                                            ObjectWithUIDFrame,
-                                           ObjectHistory,
-                                           FPS,
-                                           Timestamps)
+                                           ObjectHistory)
 
 
 class SequenceObjects:
     """Estructura de datos que almacena y gestiona los objetos detectados en una secuencia de
     vídeo.
 
+    TODO: Mejorar la clase. Plantear si listas enlazadas o arraylists
+      Eliminar tanta tupla... usar mejor clases o namedtuples.
     """
-    def __init__(self, sequence_length: int, sequence_fps: FPS, timestamps: Timestamps):
+    def __init__(self, sequence: Sequence):
         """
 
-        :param sequence_length: cantidad de frames en la secuencia.
-        :param sequence_fps: frames por segundo de la secuencia.
-        :param timestamps: lista de las marcas de tiempo (ms) indexadas por frame.
+        :param sequence: secuencia de vídeo con la información de él.
         """
-        self.sequence_length = sequence_length
-        self.sequence_fps = sequence_fps
-        self.sequence_timestamps = timestamps
+        self.sequence_length = len(sequence)
+        self.sequence_fps = sequence.fps
         # Gestion interna de la estructura.
         self._next_uid = 0
         # Lista con la información de los objetos almacenados.
@@ -126,17 +124,6 @@ class SequenceObjects:
         """
         object_history = self.object_uid(object_uid)
         return [(frame, obj.center) for frame, obj in object_history]
-
-    def object_timestamp_positions(self, object_uid: int) -> List[Tuple[int, Point2D]]:
-        """
-        Obtiene las posiciones en las que estuvo el objeto en cada instante de tiempo en el que fue
-        registrado.
-
-        :param object_uid: identificador del objeto.
-        :return: lista de pares (timestamp, posición).
-        """
-        object_history = self.object_uid(object_uid)
-        return [(self.sequence_timestamps[frame], obj.center) for frame, obj in object_history]
 
     def objects(self) -> List[ObjectWithUIDFrame]:
         """

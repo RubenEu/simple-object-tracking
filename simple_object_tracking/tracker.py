@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from simple_object_detection.detection_model import DetectionModel
-from simple_object_detection.utils import generate_detections_in_sequence
+from simple_object_detection.utils import generate_detections_in_sequence, Sequence
 
 from simple_object_tracking.datastructures import SequenceObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
@@ -21,7 +21,7 @@ class ObjectTracker(ABC):
     """
 
     def __init__(self,
-                 sequence_with_information: SequenceInformation,
+                 sequence: Sequence,
                  object_detector: DetectionModel = None,
                  object_detections: SequenceObjectsDetections = None,
                  objects_filters: List[ObjectsFilterFunction] = None,
@@ -39,14 +39,13 @@ class ObjectTracker(ABC):
         :param args:
         :param kwargs:
         """
-        (self.frame_width, self.frame_height,
-         self.fps, self.sequence, self.timestamps) = sequence_with_information
+        self.sequence = sequence
         self.object_detector = object_detector
         self.object_detections = object_detections
         self.objects_filters = objects_filters
         self.frames_to_unregister_missing_objects = frames_to_unregister_missing_objects
         # Estructura de datos de los objetos almacenados.
-        self.objects = SequenceObjects(len(self.sequence), self.fps, self.timestamps)
+        self.objects = SequenceObjects(self.sequence)
         # Comprobaciones
         if object_detector is None and object_detections is None:
             raise SimpleObjectTrackingException('You must provide and object detector or list with '
