@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 
 from simple_object_detection.typing import Point2D
+from simple_object_detection.utils.video import Sequence
 
-from simple_object_tracking.typing import Sequence, Timestamps
 from simple_object_tracking.datastructures import SequenceObjects
 
 
@@ -20,7 +20,6 @@ def calculate_euclidean_distance(point_1: Point2D, point_2: Point2D) -> float:
 
 
 def sequence_with_traces(sequence: Sequence,
-                         timestamps: Timestamps,
                          objects_stored: SequenceObjects,
                          frames_missing_to_remove_trace: int = 30) -> Sequence:
     """Genera una secuencia de vídeo con los trazados del seguimiento de los objetos.
@@ -32,9 +31,9 @@ def sequence_with_traces(sequence: Sequence,
     de objetos en la escena, cantidad de objetos desregistrados.
 
     :param sequence: secuencia de video
-    :param timestamps: lista de marcas de tiempo indexada por frame.
     :param objects_stored: almacenamiento e información de los objetos de la secuencia.
-    :param frames_missing_to_remove_trace: Cantidad de frames que tienen pasar para eliminar el trazado del objeto.
+    :param frames_missing_to_remove_trace: Cantidad de frames que tienen pasar para eliminar el
+    trazado del objeto.
     :return: secuencia de vídeo con la información plasmada en él.
     """
     # Copiar la secuencia para no editar la misma que se pasa por parámetro.
@@ -58,9 +57,9 @@ def sequence_with_traces(sequence: Sequence,
                     2, cv2.LINE_AA)
         cv2.putText(frame, f'Frame: {frame_id}.', (p1[0] + 5, p1[1] + 52), font, 0.65, (255, 255, 255),
                     1, cv2.LINE_AA)
-        text = f'Timestamp: {timestamps[frame_id]/1000}s ({timestamps[frame_id]}ms)'
-        cv2.putText(frame, text, (p1[0] + 5, p1[1] + 80), font, 0.65, (255, 255, 255),
-                    1, cv2.LINE_AA)
+        # text = f'Timestamp: {timestamps[frame_id]/1000}s ({timestamps[frame_id]}ms)'
+        # cv2.putText(frame, text, (p1[0] + 5, p1[1] + 80), font, 0.65, (255, 255, 255),
+        #             1, cv2.LINE_AA)
         # 2. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
