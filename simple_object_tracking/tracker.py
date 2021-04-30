@@ -2,12 +2,11 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from simple_object_detection.detection_model import DetectionModel
-from simple_object_detection.utils import generate_detections_in_sequence, Sequence
+from simple_object_detection.utils import generate_objects_detections, Sequence
 
 from simple_object_tracking.datastructures import SequenceObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
-from simple_object_tracking.typing import (SequenceInformation,
-                                           SequenceObjectsDetections,
+from simple_object_tracking.typing import (SequenceObjectsDetections,
                                            ObjectsFilterFunction,
                                            FrameID,
                                            Object,
