@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import cv2
 
@@ -21,7 +23,7 @@ def calculate_euclidean_distance(point_1: Point2D, point_2: Point2D) -> float:
 
 def sequence_with_traces(sequence: Sequence,
                          objects_stored: SequenceObjects,
-                         frames_missing_to_remove_trace: int = 30) -> Sequence:
+                         frames_missing_to_remove_trace: int = 30) -> Any:
     """Genera una secuencia de vídeo con los trazados del seguimiento de los objetos.
 
     Además, se mantendrá una caja delimitadora con cada uno de los objetos detectados en ese frame,
@@ -36,6 +38,19 @@ def sequence_with_traces(sequence: Sequence,
     trazado del objeto.
     :return: secuencia de vídeo con la información plasmada en él.
     """
+    class TemporarySequence:
+        def __init__(self, sequence, width, height, fps):
+            self.sequence = sequence
+            self.width = width
+            self.height = height
+            self.fps = fps
+
+        def __getitem__(self, item):
+            return self.sequence[item]
+    # Información de la secuencia
+    width = sequence.width
+    height = sequence.height
+    fps = sequence.fps
     # Copiar la secuencia para no editar la misma que se pasa por parámetro.
     sequence = [frame.copy() for frame in sequence]
     # Generar colores aleatorios.
@@ -104,7 +119,7 @@ def sequence_with_traces(sequence: Sequence,
             text = f'{object_detection.center}'
             position = (top_left_corner_x, top_left_corner_y - 33)
             cv2.putText(frame, text, position, font, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
-    return sequence
+    return TemporarySequence(sequence, width, height, fps)
 
 
 
