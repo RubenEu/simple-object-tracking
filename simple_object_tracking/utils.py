@@ -32,6 +32,9 @@ def sequence_with_traces(sequence: StreamSequence,
     Abajo a la derecha se podrá observar información del vídeo: frame actual, milisegundo, cantidad
     de objetos en la escena, cantidad de objetos desregistrados.
 
+    TODO: Usar una clase de VideoWriter para ir escribiendo frame a frame, en lugar de cargarlo
+     todo en memoria.
+
     :param sequence: secuencia de video
     :param objects_stored: almacenamiento e información de los objetos de la secuencia.
     :param frames_missing_to_remove_trace: Cantidad de frames que tienen pasar para eliminar el
@@ -72,9 +75,6 @@ def sequence_with_traces(sequence: StreamSequence,
                     2, cv2.LINE_AA)
         cv2.putText(frame, f'Frame: {frame_id}.', (p1[0] + 5, p1[1] + 52), font, 0.65, (255, 255, 255),
                     1, cv2.LINE_AA)
-        # text = f'Timestamp: {timestamps[frame_id]/1000}s ({timestamps[frame_id]}ms)'
-        # cv2.putText(frame, text, (p1[0] + 5, p1[1] + 80), font, 0.65, (255, 255, 255),
-        #             1, cv2.LINE_AA)
         # 2. Trazado.
         for object_uid in range(len(objects_stored)):
             object_history = objects_stored.object_uid(object_uid)
