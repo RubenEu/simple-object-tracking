@@ -26,9 +26,16 @@ class CentroidTracker(ObjectTracker):
     distintos objetos los que está viendo, no uno mismo.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, max_distance_allowed: int = 120, *args, **kwargs):
+        """
+
+        :param max_distance_allowed: máxima distancia para considerar que dos objetos en dos frames
+        distintos pueden considerarse el mismo.
+        :param args:
+        :param kwargs:
+        """
         super().__init__(*args, **kwargs)
-        self.max_distance_allowed = 0.10 * max(self.sequence.width, self.sequence.height)
+        self.max_distance_allowed = max_distance_allowed
 
     def _matching_step(self,
                        objs_registered: List[Tuple[int, int, Object]],
