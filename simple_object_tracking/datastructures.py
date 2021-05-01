@@ -1,10 +1,22 @@
-from typing import List, Tuple, Optional
+from typing import List, Optional, NamedTuple
 
 from simple_object_detection.object import Object
 from simple_object_detection.typing import Point2D
 from simple_object_detection.utils import StreamSequence
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
+
+
+class ObjectIdentified(NamedTuple):
+    """Objeto detectado con identificador numérico."""
+    id: int
+    object: Object
+
+
+class ObjectInFrame(NamedTuple):
+    """Objeto en un frame."""
+    frame: int
+    object: Object
 
 
 class TrackedObject:
@@ -24,15 +36,15 @@ class TrackedObject:
         self.frames = [ini_frame]
         self.detections = [ini_obj]
 
-    def __getitem__(self, item: int) -> Tuple[int, Object]:
+    def __getitem__(self, item: int) -> ObjectInFrame:
         """Devuelve el frame y la detección del objeto registrada.
 
         :param item: posición del registro del objeto.
         :return: tupla del frame y detección del objeto.
         """
-        if item > len(self):
+        if item >= len(self):
             raise IndexError(f'El índice {item} no está registrado para el objeto {self.id}')
-        return self.frames[item], self.detections[item]
+        return ObjectInFrame(self.frames[item], self.detections[item])
 
     def __len__(self) -> int:
         """Cantidad de veces que ha sido detectado el objeto.
@@ -85,6 +97,23 @@ class TrackedObjects:
         self._next_uid = 0
         self._tracked_objects: List[TrackedObject] = []
 
+    def __len__(self):
+        """Cantida de objetos almacenados (tanto registrados como ya desregistrados).
+
+        :return: número de objetos almacenados.
+        """
+        return len(self._tracked_objects)
+
+    def __getitem__(self, item: int) -> TrackedObject:
+        """Busca un objeto por su uid.
+
+        :param item: índice del objeto seguido.
+        :return: instancia del objeto seguido.
+        """
+        if item >= len(self._tracked_objects):
+            raise IndexError(f'El objeto {item} no se encuentra registrado.')
+        return self._tracked_objects[item]
+
     def register_object(self, obj: Object, frame: int) -> bool:
         """Registra un objeto.
 
@@ -135,17 +164,17 @@ class TrackedObjects:
             if frames_elapsed > frames_missing:
                 self._tracked_objects[obj_id].status = False
 
-    def frame_objects(self, frame: int) -> List[Tuple[int, Object]]:
+    def frame_objects(self, frame: int) -> List[ObjectIdentified]:
         """Crea una lista de los objetos que hay en un frame.
 
         :param frame: número del frame del que se quiere obtener los objetos registrados.
         :return: lista de pares de identificador del objeto y objeto.
         """
-        objects_in_frame: List[Tuple[int, Object]] = list()
+        objects_in_frame: List[ObjectIdentified] = list()
         for object_tracked in self._tracked_objects:
             detection = object_tracked.find_in_frame(frame)
             if detection is not None:
-                objects_in_frame.append((object_tracked.id, detection))
+                objects_in_frame.append(ObjectIdentified(object_tracked.id, detection))
         return objects_in_frame
 
     def tracked_objects(self) -> List[TrackedObject]:
@@ -182,20 +211,3 @@ class TrackedObjects:
         actual_uid = self._next_uid
         self._next_uid += 1
         return actual_uid
-
-    def __len__(self):
-        """Cantida de objetos almacenados (tanto registrados como ya desregistrados).
-
-        :return: número de objetos almacenados.
-        """
-        return len(self._tracked_objects)
-
-    def __getitem__(self, item: int) -> TrackedObject:
-        """Busca un objeto por su uid.
-
-        :param item: índice del objeto seguido.
-        :return: instancia del objeto seguido.
-        """
-        if item > len(self._tracked_objects):
-            raise IndexError(f'El objeto {item} no se encuentra registrado.')
-        return self._tracked_objects[item]
