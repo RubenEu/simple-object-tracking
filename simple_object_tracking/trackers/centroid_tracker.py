@@ -5,6 +5,8 @@ from simple_object_detection.object import Object
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import euclidean_norm
 
+# TODO: Hay que cambiar muchas cosas debido a los cambios en datastructures.py
+
 
 class CentroidTracker(ObjectTracker):
     """Modelo de seguimiento de objetos basados en su centro.
