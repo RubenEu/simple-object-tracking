@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Callable
 
 from simple_object_detection.detection_model import DetectionModel
+from simple_object_detection.typing import Image
 from simple_object_detection.utils import generate_objects_detections, StreamSequence
+from simple_object_detection.object import Object
 
 from simple_object_tracking.datastructures import SequenceObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
-from simple_object_tracking.typing import (SequenceObjectsDetections,
-                                           ObjectsFilterFunction,
-                                           FrameID,
-                                           Object,
-                                           Image)
 
 
 class ObjectTracker(ABC):
@@ -21,17 +18,15 @@ class ObjectTracker(ABC):
 
     def __init__(self,
                  sequence: StreamSequence,
-                 object_detector: DetectionModel = None,
-                 object_detections: SequenceObjectsDetections = None,
-                 objects_filters: List[ObjectsFilterFunction] = None,
+                 objects_detections: List[List[Object]],
+                 objects_filters: List[Callable[[List[Object]], List[Object]]] = None,
                  frames_to_unregister_missing_objects: int = 10,
                  *args,
                  **kwargs):
         """
 
-        :param sequence_with_information: información sobre la secuencia y lista de frames.
-        :param object_detector: modelo de detección de objetos.
-        :param object_detections: detecciones de objetos cargada.
+        :param sequence: secuencia de vídeo e información de ella.
+        :param objects_detections: detecciones de objetos cargada.
         :param objects_filters: lista de filtros para aplicar sobre los objetos detectados.
         :param frames_to_unregister_missing_objects: cantidad de frames para eliminar un objeto
         registrado.
@@ -39,50 +34,26 @@ class ObjectTracker(ABC):
         :param kwargs:
         """
         self.sequence = sequence
-        self.object_detector = object_detector
-        self.object_detections = object_detections
-        self.objects_filters = objects_filters
+        self.objects_detections = objects_detections
+        self.objects_filters = objects_filters or []
         self.frames_to_unregister_missing_objects = frames_to_unregister_missing_objects
         # Estructura de datos de los objetos almacenados.
         self.objects = SequenceObjects(self.sequence)
-        # Comprobaciones
-        if object_detector is None and object_detections is None:
-            raise SimpleObjectTrackingException('You must provide and object detector or list with '
-                                                'detections per frame preloaded.')
 
-    def objects_in_frame(self, frame_id: FrameID) -> List[Object]:
-        """Método para la obtención de los objetos en un frame.
+    def frame_objects(self, fid: int) -> List[Object]:
+        """Método para obtener los objetos detectados en un frame.
 
-        Si las detecciones se encuentran cargadas, se leen directamente de memoria, en caso
-        contrario se realiza la detección de los objetos en ese frame en el mismo instante.
+        Además, se aplican los filtros pasados a la instancia con el parámetro ``objects_filters``.
 
-        Después se aplica la lista de funciones filtro de objetos.
-
-        Es recomendable usar el método de instancia: preload_objects() para calcular todas las
-        detecciones a lo largo de la secuencia.
-
-        :param frame_id: índice del frame del que se quieren extraer los objetos.
+        :param fid: índice del frame del que se quieren extraer los objetos.
         :return: lista de los objetos detectados en ese frame.
         """
         # Obtener los objetos del detector si no hay detecciones precargadas.
-        if self.object_detections is None:
-            objects_in_frame = self.object_detector.get_objects(self.sequence[frame_id])
-        else:
-            objects_in_frame = self.object_detections[frame_id]
-        # Comprobar que se ha establecido una lista de filtros.
-        if isinstance(self.objects_filters, list):
-            for filter_function in self.objects_filters:
-                objects_in_frame = filter_function(objects_in_frame)
+        objects_in_frame = self.objects_detections[fid]
+        # Aplicar los filtros a los objetos.
+        for filter_function in self.objects_filters:
+            objects_in_frame = filter_function(objects_in_frame)
         return objects_in_frame
-
-    def preload_objects(self, mask: Image = None) -> None:
-        """Realiza la detección de todos los objetos a lo largo de la secuencia y los almacena en
-        el atributo de instancia self.object_detections.
-        """
-        if self.object_detector is None:
-            raise SimpleObjectTrackingException('The object detector network is None.')
-        self.object_detections = generate_objects_detections(self.object_detector,
-                                                             self.sequence, mask)
 
     def run(self) -> None:
         """Ejecuta el algoritmo de seguimiento y calcula el registro de seguimiento de los objetos.
@@ -95,4 +66,3 @@ class ObjectTracker(ABC):
 
         Este método es llamado por run(). No se espera que devuelva nada.
         """
-        ...

@@ -3,7 +3,7 @@ from typing import List, Tuple
 from simple_object_detection.object import Object
 
 from simple_object_tracking.tracker import ObjectTracker
-from simple_object_tracking.utils import calculate_euclidean_distance
+from simple_object_tracking.utils import euclidean_norm
 
 
 class CentroidTracker(ObjectTracker):
@@ -49,8 +49,8 @@ class CentroidTracker(ObjectTracker):
             for obj_registered_id, obj_registered in enumerate(objs_registered):
                 (obj_registered_uid, obj_registered_last_frame_seen,
                  obj_registered_detected) = obj_registered
-                distance = calculate_euclidean_distance(obj_registered_detected.center,
-                                                        obj_actual_detection.center)
+                distance = euclidean_norm(obj_registered_detected.center,
+                                          obj_actual_detection.center)
                 distances_to_objs_actual.append(distance)
             # Busca la distancia mínima.
             min_distance = min(distances_to_objs_actual)

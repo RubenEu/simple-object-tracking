@@ -1,0 +1,1 @@
+from simple_object_tracking.utils.maths import euclidean_norm

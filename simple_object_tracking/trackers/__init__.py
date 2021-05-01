@@ -1,1 +1,1 @@
-from .centroid_tracker import *
+from simple_object_tracking.trackers.centroid_tracker import CentroidTracker
