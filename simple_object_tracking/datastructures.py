@@ -86,13 +86,7 @@ class TrackedObjects:
     vídeo.
     """
 
-    def __init__(self, sequence: StreamSequence):
-        """
-
-        :param sequence: secuencia de vídeo con la información de él.
-        """
-        self.sequence_len = len(sequence)
-        self.sequence_fps = sequence.fps
+    def __init__(self):
         # Gestion interna de la estructura.
         self._next_uid = 0
         self._tracked_objects: List[TrackedObject] = []
