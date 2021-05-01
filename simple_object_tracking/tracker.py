@@ -6,7 +6,7 @@ from simple_object_detection.typing import Image
 from simple_object_detection.utils import generate_objects_detections, StreamSequence
 from simple_object_detection.object import Object
 
-from simple_object_tracking.datastructures import SequenceObjects
+from simple_object_tracking.datastructures import TrackedObjects
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
 
 
@@ -17,7 +17,6 @@ class ObjectTracker(ABC):
     """
 
     def __init__(self,
-                 sequence: StreamSequence,
                  objects_detections: List[List[Object]],
                  objects_filters: List[Callable[[List[Object]], List[Object]]] = None,
                  frames_to_unregister_missing_objects: int = 10,
@@ -33,12 +32,11 @@ class ObjectTracker(ABC):
         :param args:
         :param kwargs:
         """
-        self.sequence = sequence
         self.objects_detections = objects_detections
         self.objects_filters = objects_filters or []
         self.frames_to_unregister_missing_objects = frames_to_unregister_missing_objects
         # Estructura de datos de los objetos almacenados.
-        self.objects = SequenceObjects(self.sequence)
+        self.objects = TrackedObjects()
 
     def frame_objects(self, fid: int) -> List[Object]:
         """Método para obtener los objetos detectados en un frame.
