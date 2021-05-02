@@ -1,1 +1,2 @@
 from simple_object_tracking.utils.maths import euclidean_norm
+from simple_object_tracking.utils.video import TrackingVideo, TrackingVideoProperty
