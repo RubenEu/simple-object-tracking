@@ -1,20 +1,13 @@
 from typing import List, Optional, NamedTuple
 
 from simple_object_detection.object import Object
-from simple_object_detection.typing import Point2D
-from simple_object_detection.utils import StreamSequence
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
 
 
-class ObjectIdentified(NamedTuple):
-    """Objeto detectado con identificador numérico."""
+class TrackedObjectDetection(NamedTuple):
+    """Detección de un objeto en su seguimiento."""
     id: int
-    object: Object
-
-
-class ObjectInFrame(NamedTuple):
-    """Objeto en un frame."""
     frame: int
     object: Object
 
@@ -36,7 +29,7 @@ class TrackedObject:
         self.frames = [ini_frame]
         self.detections = [ini_obj]
 
-    def __getitem__(self, item: int) -> ObjectInFrame:
+    def __getitem__(self, item: int) -> TrackedObjectDetection:
         """Devuelve el frame y la detección del objeto registrada.
 
         :param item: posición del registro del objeto.
@@ -44,7 +37,7 @@ class TrackedObject:
         """
         if item >= len(self):
             raise IndexError(f'El índice {item} no está registrado para el objeto {self.id}')
-        return ObjectInFrame(self.frames[item], self.detections[item])
+        return TrackedObjectDetection(self.id, self.frames[item], self.detections[item])
 
     def __len__(self) -> int:
         """Cantidad de veces que ha sido detectado el objeto.
@@ -52,6 +45,9 @@ class TrackedObject:
         :return: número de seguimientos del objeto.
         """
         return len(self.detections)
+
+    def __str__(self) -> str:
+        return f'TrackedObject(id={self.id}, status={self.status}, detections: {len(self)})'
 
     def append(self, frame: int, obj: Object) -> None:
         """Añade un registro al seguimiento del objeto.
@@ -63,7 +59,7 @@ class TrackedObject:
         self.frames.append(frame)
         self.detections.append(obj)
 
-    def find_in_frame(self, frame: int) -> Optional[Object]:
+    def find_in_frame(self, frame: int) -> Optional[TrackedObjectDetection]:
         """Busca la detección del objeto en el frame indicado.
 
         :param frame: número del frame.
@@ -73,7 +69,7 @@ class TrackedObject:
             index = self.frames.index(frame)
         except ValueError:
             return None
-        return self.detections[index]
+        return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
 
     def interpolate_positions(self):
         """TODO: Realiza la interpolación de las posiciones entre la primera y la última.
@@ -108,6 +104,9 @@ class TrackedObjects:
             raise IndexError(f'El objeto {item} no se encuentra registrado.')
         return self._tracked_objects[item]
 
+    def __str__(self) -> str:
+        return f'TrackedObjects({len(self)} objects registered).'
+
     def register_object(self, obj: Object, frame: int) -> bool:
         """Registra un objeto.
 
@@ -140,35 +139,33 @@ class TrackedObjects:
         tracked_object.append(frame, obj)
         return True
 
-    def unregister_missing_objects(self, frame, frames_missing: int) -> None:
+    def unregister_missing_objects(self, frame, max_frames_missing: int) -> None:
         """Elimina los objetos que han desaparecido durante una cantidad de frames mayor que la
         indicada por parámetro.
 
         :param frame: identificador del frame actual.
-        :param frames_missing: cantidad de frames para borrar los objetos.
+        :param max_frames_missing: cantidad de frames para borrar los objetos.
         :return: lista de tuplas (uid, objeto) desaparecidos eliminados.
         """
         # Analizar la situación de cada objeto.
         for tracked_object in self._tracked_objects:
-            obj_id, status = tracked_object.id, tracked_object.status
-            last_frame_seen, last_object_detection = tracked_object[-1]
-            frames_elapsed = frame - last_frame_seen
+            frames_elapsed = frame - tracked_object[-1].frame
             # Si ha desaparecido una cantidad de frames mayor que la indicada, cambiar el estado de
             # registro a False. Esto indicará que el objeto está desregistrado.
-            if frames_elapsed > frames_missing:
-                self._tracked_objects[obj_id].status = False
+            if frames_elapsed > max_frames_missing:
+                tracked_object.status = False
 
-    def frame_objects(self, frame: int) -> List[ObjectIdentified]:
+    def frame_objects(self, frame: int) -> List[TrackedObjectDetection]:
         """Crea una lista de los objetos que hay en un frame.
 
         :param frame: número del frame del que se quiere obtener los objetos registrados.
         :return: lista de pares de identificador del objeto y objeto.
         """
-        objects_in_frame: List[ObjectIdentified] = list()
+        objects_in_frame: List[TrackedObjectDetection] = list()
         for object_tracked in self._tracked_objects:
             detection = object_tracked.find_in_frame(frame)
             if detection is not None:
-                objects_in_frame.append(ObjectIdentified(object_tracked.id, detection))
+                objects_in_frame.append(detection)
         return objects_in_frame
 
     def tracked_objects(self) -> List[TrackedObject]:
@@ -178,7 +175,7 @@ class TrackedObjects:
         """
         return self._tracked_objects
 
-    def registered_objects(self) -> List[ObjectInFrame]:
+    def registered_objects(self) -> List[TrackedObjectDetection]:
         """Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
 
         Únicamente se devuelven los objetos cuyo estado esté mercado como registrado.

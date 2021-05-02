@@ -1,6 +1,7 @@
-from typing import List, Tuple
+from typing import List
 
 from simple_object_detection.object import Object
+from simple_object_tracking.datastructures import TrackedObjectDetection
 
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import euclidean_norm
@@ -38,7 +39,7 @@ class CentroidTracker(ObjectTracker):
         self.max_distance_allowed = max_distance_allowed
 
     def _matching_step(self,
-                       objs_registered: List[Tuple[int, int, Object]],
+                       objs_registered: List[TrackedObjectDetection],
                        objs_registered_uids_matched: List[int],
                        objs_actual: List[Object],
                        objs_actual_ids_matched: List[int],
@@ -81,17 +82,17 @@ class CentroidTracker(ObjectTracker):
 
     def _algorithm(self):
         # Paso 1. Registrar objetos iniciales.
-        for object_detected in self.objects_in_frame(0):
+        for object_detected in self.frame_objects(0):
             self.objects.register_object(object_detected, 0)
         # Paso 2. Emparejar, registrar, y desregistrar objetos en el resto de frames.
         for frame_actual in range(1, len(self.sequence)):
             # 1. Emparejar objetos.
             # Objetos registrados hasta el momento.
-            objs_registered = self.objects.objects()
+            objs_registered = self.objects.registered_objects()
             objs_registered_uids_matched = list()
             # Objetos detectados en el frame actual, candidatos para emparejar con alguno de los
             # registrados.
-            objs_actual = self.objects_in_frame(frame_actual)
+            objs_actual = self.frame_objects(frame_actual)
             objs_actual_ids_matched = list()
             self._matching_step(objs_registered, objs_registered_uids_matched,
                                 objs_actual, objs_actual_ids_matched,
