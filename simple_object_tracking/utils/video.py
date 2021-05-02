@@ -17,27 +17,17 @@ class TrackingVideoProperty(Enum):
 
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
-
-    TODO:
-        ¿Cómo plantearla? ¿Clase para dibujar frame a frame? ¿ esta dibuja, guarda y todo?
     """
     def __init__(self, tracker: ObjectTracker):
         self.tracker = tracker
         self._properties: Set[TrackingVideoProperty] = set()
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracker.objects), 3))
 
-    def _draw_object_bounding_box(self,
-                                  fid: int,
-                                  frame: Image,
-                                  tracked_obj: TrackedObject) -> Image:
-        # Buscar el objeto en la lista de seguimientos en el frame indicado.
-        obj_in_frame = tracked_obj.find_in_frame(fid)
-        # Si el objeto no está en ese frame, devolver el frame sin dibujar. Si no, copiar el frame.
-        if obj_in_frame is None:
-            return frame
+    def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
+        # Copiar el frame para no editar el original.
         frame = frame.copy()
         # Obtener la bounding box.
-        bounding_box = obj_in_frame.object.bounding_box
+        bounding_box = tracked_obj.object.bounding_box
         # Dibujar sobre el frame.
         color = self._objects_colors[tracked_obj.id]
         cv2.line(frame, bounding_box.top_left, bounding_box.top_right, color, 2, cv2.LINE_AA)
@@ -47,8 +37,11 @@ class TrackingVideo:
         return frame
 
     def _draw_bounding_boxes(self, fid: int, frame: Image) -> Image:
-        for tracked_obj in self.tracker.objects:
-            frame = self._draw_object_bounding_box(fid, frame, tracked_obj)
+        # Objetos detectados en el frame fid.
+        objects_in_frame = self.tracker.objects.frame_objects(fid)
+        # Dibujar las bounding boxes de cada objeto en el frame fid.
+        for tracked_obj in objects_in_frame:
+            frame = self._draw_object_bounding_box(frame, tracked_obj)
         return frame
 
     def add_property(self, property_: TrackingVideoProperty) -> None:
