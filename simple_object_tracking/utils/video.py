@@ -17,6 +17,9 @@ class TrackingVideoProperty(Enum):
 
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
+
+    TODO:
+      - Añadir a Youtrack y las funcionalidades referidas a esta clase.
     """
     def __init__(self, tracker: ObjectTracker):
         self.tracker = tracker
@@ -59,6 +62,13 @@ class TrackingVideo:
         :return: None.
         """
         self._properties.remove(property_)
+
+    def properties(self):
+        """Devuelve la lista de propiedades.
+
+        :return: lista de propiedades.
+        """
+        return list(self._properties)
 
     def add_object_information(self):
         ...
