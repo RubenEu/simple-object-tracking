@@ -178,17 +178,18 @@ class TrackedObjects:
         """
         return self._tracked_objects
 
-    def registered_objects(self):
+    def registered_objects(self) -> List[ObjectInFrame]:
         """Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
 
         Únicamente se devuelven los objetos cuyo estado esté mercado como registrado.
 
-        TODO: Rehacer esto y pensar para qué sirve, si sirve realmente. Se llamaba inicialmente
-          ``objects``.
-          Este método devuelve todos los objetos con status True, su último frame y su detección.
         :return: lista de (último frame visto, objeto).
         """
-        raise DeprecationWarning()
+        registered_objects = []
+        for obj in self._tracked_objects:
+            if obj.status:
+                registered_objects.append(obj[-1])
+        return registered_objects
 
     def _next_uid(self) -> int:
         """Devuelve el uid siguiente para asignar.
