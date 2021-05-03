@@ -38,7 +38,11 @@ class TrackingVideo:
         :return: frame con los dibujados aplicados.
         """
         frame = self.sequence[item]
+        # Aplicar dibujados internos.
         frame = self._apply_internal_drawings(item, frame)
+        # Aplicar funciones añadidas.
+        for function in self._functions:
+            frame = function(frame)
         return frame
 
     def _apply_internal_drawings(self, fid: int, frame: Image) -> Image:
