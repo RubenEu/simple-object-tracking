@@ -18,14 +18,14 @@ class TrackingVideoProperty(Enum):
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
     """
-    def __init__(self, tracked_objects: TrackedObjects, sequence: StreamSequence):
+    def __init__(self, tracked_objects: TrackedObjects, input_sequence: StreamSequence):
         """
 
         :param tracked_objects: estructura de datos con el seguimiento de los objetos.
-        :param sequence: secuencia de vídeo.
+        :param input_sequence: secuencia de vídeo.
         """
         self.tracked_objects = tracked_objects
-        self.sequence = sequence
+        self.input_sequence = input_sequence
         self._properties: Dict[TrackingVideoProperty, Any] = {}
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracked_objects), 3))
         self._functions = []
@@ -38,7 +38,7 @@ class TrackingVideo:
         :param item: índice del frame.
         :return: frame con los dibujados aplicados.
         """
-        frame = self.sequence[item].copy()
+        frame = self.input_sequence[item].copy()
         # Aplicar funciones añadidas.
         for function in self._functions:
             frame = function(frame)
@@ -63,7 +63,8 @@ class TrackingVideo:
             frame = self._draw_objects_traces(fid, frame)
         return frame
 
-    def _draw_object_trace(self, fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
+    @staticmethod
+    def _draw_object_trace(fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
         """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
         :param fid: número del frame.
@@ -165,14 +166,12 @@ class TrackingVideo:
     def add_frame_information(self):
         ...
 
-    def generate_video(self, sequence: StreamSequence, file_output: str) -> None:
-        """Genera la secuencia de vídeo con las características especificadas.
+    def generate_video(self, file_output: str) -> None:
+        """Genera la secuencia de vídeo y la guarda en un archivo.
 
-        :param sequence: vídeo sobre el que se genera el seguimiento de los objetos.
         :param file_output: archivo de salida.
         :return: None.
         """
-        output_stream = StreamSequenceWriter(file_output, sequence.properties())
-        for fid, frame in enumerate(sequence):
-            frame = self.__getitem__(fid)
+        output_stream = StreamSequenceWriter(file_output, self.input_sequence.properties())
+        for frame in self:
             output_stream.write(frame)
