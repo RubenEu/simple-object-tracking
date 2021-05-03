@@ -17,14 +17,41 @@ class TrackingVideoProperty(Enum):
 
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
-
-    TODO:
-      - Añadir a Youtrack y las funcionalidades referidas a esta clase.
     """
-    def __init__(self, tracker: ObjectTracker):
+    def __init__(self, tracker: ObjectTracker, sequence: StreamSequence):
+        """
+
+        :param tracker: estructura de datos con el seguimiento de los objetos.
+        :param sequence: secuencia de vídeo.
+        """
         self.tracker = tracker
+        self.sequence = sequence
         self._properties: Set[TrackingVideoProperty] = set()
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracker.objects), 3))
+
+    def __getitem__(self, item: int) -> Image:
+        """Obtiene el frame item-ésimo con los dibujados aplicados.
+
+        :param item: índice del frame.
+        :return: frame con los dibujados aplicados.
+        """
+        frame = self.sequence[item]
+        frame = self._apply_internal_drawings(item, frame)
+        return frame
+
+    def _apply_internal_drawings(self, fid: int, frame: Image) -> Image:
+        """Aplica las funciones internas de dibujado.
+
+        Son aplicadas a través de las propiedades.
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :return: frame con los dibujados.
+        """
+        # DRAW_BOUNDING_BOXES
+        if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
+            frame = self._draw_bounding_boxes(fid, frame)
+        return frame
 
     def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
         # Copiar el frame para no editar el original.
@@ -85,9 +112,5 @@ class TrackingVideo:
         """
         output_stream = StreamSequenceWriter(file_output, sequence.properties())
         for fid, frame in enumerate(sequence):
-            # TODO: Aplicar cosos
-            if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
-                frame = self._draw_bounding_boxes(fid, frame)
-            # ...
-            # ...
+            frame = self.__getitem__(fid)
             output_stream.write(frame)
