@@ -6,7 +6,8 @@ from enum import Enum
 from simple_object_detection.typing import Image
 from simple_object_detection.utils import StreamSequence
 from simple_object_detection.utils.video import StreamSequenceWriter
-from simple_object_tracking.datastructures import TrackedObjectDetection, TrackedObject
+from simple_object_tracking.datastructures import TrackedObjectDetection, TrackedObject, \
+    TrackedObjects
 
 from simple_object_tracking.tracker import ObjectTracker
 
@@ -18,16 +19,16 @@ class TrackingVideoProperty(Enum):
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
     """
-    def __init__(self, tracker: ObjectTracker, sequence: StreamSequence):
+    def __init__(self, tracked_objects: TrackedObjects, sequence: StreamSequence):
         """
 
-        :param tracker: estructura de datos con el seguimiento de los objetos.
+        :param tracked_objects: estructura de datos con el seguimiento de los objetos.
         :param sequence: secuencia de vídeo.
         """
-        self.tracker = tracker
+        self.tracked_objects = tracked_objects
         self.sequence = sequence
         self._properties: Set[TrackingVideoProperty] = set()
-        self._objects_colors = np.random.uniform(0, 255, size=(len(tracker.objects), 3))
+        self._objects_colors = np.random.uniform(0, 255, size=(len(tracked_objects), 3))
 
     def __getitem__(self, item: int) -> Image:
         """Obtiene el frame item-ésimo con los dibujados aplicados.
@@ -51,6 +52,8 @@ class TrackingVideo:
         # DRAW_BOUNDING_BOXES
         if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
             frame = self._draw_bounding_boxes(fid, frame)
+        # DRAW TRACES
+        # ...
         return frame
 
     def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
@@ -68,9 +71,9 @@ class TrackingVideo:
 
     def _draw_bounding_boxes(self, fid: int, frame: Image) -> Image:
         # Objetos detectados en el frame fid.
-        objects_in_frame = self.tracker.objects.frame_objects(fid)
+        tracked_objects_in_frame = self.tracked_objects.frame_objects(fid)
         # Dibujar las bounding boxes de cada objeto en el frame fid.
-        for tracked_obj in objects_in_frame:
+        for tracked_obj in tracked_objects_in_frame:
             frame = self._draw_object_bounding_box(frame, tracked_obj)
         return frame
 
