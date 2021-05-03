@@ -202,6 +202,31 @@ class TrackedObjects:
                 registered_objects.append(obj[-1])
         return registered_objects
 
+    def purge_objects(self, ids: List[int]) -> None:
+        """Elimina los objetos indicados y restablece los ids para que mantengan un orden
+        secuencial.
+
+        :param ids: identificadores de los objetos seguidos a eliminar.
+        :return: None.
+        """
+        for id_ in ids:
+            # Eliminar el objeto de la estructura
+            self._tracked_objects.pop(id_)
+            # Reajustar los índices.
+            for tracked_object in self._tracked_objects[id_:]:
+                tracked_object.id -= 1
+
+    def remove_objects_with_less_detections_than(self, minimum_detections: int) -> List[int]:
+        """Elimina los objetos que tienen un número de detecciones menor al indicado.
+
+        :param minimum_detections: número mínimo de detecciones que deben tener los objetos.
+        :return: identificadores de los objetos eliminados.
+        """
+        to_remove = [tracked_object.id for tracked_object in self._tracked_objects
+                     if len(tracked_object) < minimum_detections]
+        self.purge_objects(to_remove)
+        return to_remove
+
     def _next_uid(self) -> int:
         """Devuelve el uid siguiente para asignar.
 
