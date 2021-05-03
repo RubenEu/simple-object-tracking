@@ -209,11 +209,14 @@ class TrackedObjects:
         :param ids: identificadores de los objetos seguidos a eliminar.
         :return: None.
         """
-        for id_ in ids:
+        # Se elimina el objeto, porque si se hace por índice daría error en el índice + 1, ya que
+        # ese estaría uno por debajo.
+        objects_to_remove = [self._tracked_objects[id_] for id_ in ids]
+        for object_ in objects_to_remove:
             # Eliminar el objeto de la estructura
-            self._tracked_objects.pop(id_)
+            self._tracked_objects.remove(object_)
             # Reajustar los índices.
-            for tracked_object in self._tracked_objects[id_:]:
+            for tracked_object in self._tracked_objects[object_.id:]:
                 tracked_object.id -= 1
 
     def remove_objects_with_less_detections_than(self, minimum_detections: int) -> List[int]:
