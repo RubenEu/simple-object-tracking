@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from typing import Set
+from typing import Set, Callable
 from enum import Enum
 
 from simple_object_detection.typing import Image
@@ -29,6 +29,7 @@ class TrackingVideo:
         self.sequence = sequence
         self._properties: Set[TrackingVideoProperty] = set()
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracked_objects), 3))
+        self._functions = []
 
     def __getitem__(self, item: int) -> Image:
         """Obtiene el frame item-ésimo con los dibujados aplicados.
@@ -76,6 +77,16 @@ class TrackingVideo:
         for tracked_obj in tracked_objects_in_frame:
             frame = self._draw_object_bounding_box(frame, tracked_obj)
         return frame
+
+    def add_function(self, function: Callable[[Image], Image]) -> None:
+        """Añade una función que recibe como argumento una imagen y devuelve una imagen.
+
+        Esto puede ser útil para aplicar funciones de homografía, por ejemplo.
+
+        :param function: función que recibe una imagen y devuelve una imagen.
+        :return:
+        """
+        self._functions.append(function)
 
     def add_property(self, property_: TrackingVideoProperty) -> None:
         """Añade una propiedad a la creación del vídeo de seguimiento.
