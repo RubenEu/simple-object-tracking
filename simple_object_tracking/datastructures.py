@@ -104,6 +104,20 @@ class TrackedObjects:
             raise IndexError(f'El objeto {item} no se encuentra registrado.')
         return self._tracked_objects[item]
 
+    def __setitem__(self, key: int, value: TrackedObject) -> None:
+        """Modifica el objeto almacenado.
+
+        No se permiten añadir nuevos objetos fuera de los índices ya establecidos. Para añadir
+        nuevos objetos usar el método ``register_object``.
+
+        :param key: índice del objeto.
+        :param value: nueva instancia del objeto seguido.
+        :return: None.
+        """
+        if key >= len(self._tracked_objects):
+            raise IndexError(f'El objeto {key} no se encuentra registrado.')
+        self._tracked_objects[key] = value
+
     def __str__(self) -> str:
         return f'TrackedObjects({len(self)} objects registered).'
 
