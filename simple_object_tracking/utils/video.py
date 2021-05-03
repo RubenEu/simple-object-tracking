@@ -67,12 +67,12 @@ class TrackingVideo:
                            fid: int,
                            frame: Image,
                            tracked_obj: TrackedObject) -> Image:
-        """
+        """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
-        :param fid:
-        :param frame:
-        :param tracked_obj:
-        :return:
+        :param fid: número del frame.
+        :param frame: frame.
+        :param tracked_obj: estructura del seguimiento del objeto.
+        :return: imagen con el seguimiento del objeto.
         """
         positions_centroid = [t_obj.object.center for t_obj in tracked_obj if t_obj.frame <= fid]
         # Dibujar cada una de las posiciones
@@ -84,11 +84,12 @@ class TrackingVideo:
         return frame
 
     def _draw_objects_traces(self, fid: int, frame: Image) -> Image:
-        """
+        """Dibujar todos los trazados de los objetos que aparecen en el frame hasta el frame en el
+        que se encuentran.
 
-        :param fid:
-        :param frame:
-        :return:
+        :param fid: número del frame.
+        :param frame: frame.
+        :return: frame con los trazados de los objetos aplicados.
         """
         # Dibujar los trazados de cada objeto hasta el frame fid-ésimo.
         for tracked_obj in self.tracked_objects:
