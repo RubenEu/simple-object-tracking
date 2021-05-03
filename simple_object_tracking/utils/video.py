@@ -75,11 +75,6 @@ class TrackingVideo:
         :return: imagen con el seguimiento del objeto.
         """
         positions_centroid = [t_obj.object.center for t_obj in tracked_obj if t_obj.frame <= fid]
-        # Si ese objeto no aparece en el frame, finalizar.
-        if len(positions_centroid) == 0:
-            return frame
-        # TODO: Mostrar solo los que están en el frame!!
-
         # Dibujar cada una de las posiciones
         prev_position = positions_centroid[0]
         for position in positions_centroid:
