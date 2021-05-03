@@ -9,11 +9,10 @@ from simple_object_detection.utils.video import StreamSequenceWriter
 from simple_object_tracking.datastructures import TrackedObjectDetection, TrackedObject, \
     TrackedObjects
 
-from simple_object_tracking.tracker import ObjectTracker
-
 
 class TrackingVideoProperty(Enum):
     DRAW_BOUNDING_BOXES = 1
+    DRAW_TRACES = 2
 
 
 class TrackingVideo:
@@ -39,7 +38,7 @@ class TrackingVideo:
         :param item: índice del frame.
         :return: frame con los dibujados aplicados.
         """
-        frame = self.sequence[item]
+        frame = self.sequence[item].copy()
         # Aplicar funciones añadidas.
         for function in self._functions:
             frame = function(frame)
@@ -58,14 +57,45 @@ class TrackingVideo:
         """
         # DRAW_BOUNDING_BOXES
         if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
-            frame = self._draw_bounding_boxes(fid, frame)
+            frame = self._draw_objects_bounding_boxes(fid, frame)
         # DRAW TRACES
-        # ...
+        if TrackingVideoProperty.TRACES in self._properties:
+            frame = self._draw_objects_traces(fid, frame)
+        return frame
+
+    def _draw_object_trace(self,
+                           fid: int,
+                           frame: Image,
+                           tracked_obj: TrackedObject) -> Image:
+        """
+
+        :param fid:
+        :param frame:
+        :param tracked_obj:
+        :return:
+        """
+        positions_centroid = [t_obj.object.center for t_obj in tracked_obj if t_obj.frame <= fid]
+        # Dibujar cada una de las posiciones
+        prev_position = positions_centroid[0]
+        for position in positions_centroid:
+            cv2.line(frame, position, prev_position, (255, 43, 155), 2, cv2.LINE_AA)
+            cv2.circle(frame, position, 0, (107, 37, 74), 5, cv2.LINE_AA)
+            prev_position = position
+        return frame
+
+    def _draw_objects_traces(self, fid: int, frame: Image) -> Image:
+        """
+
+        :param fid:
+        :param frame:
+        :return:
+        """
+        # Dibujar los trazados de cada objeto hasta el frame fid-ésimo.
+        for tracked_obj in self.tracked_objects:
+            frame = self._draw_object_trace(fid, frame, tracked_obj)
         return frame
 
     def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
-        # Copiar el frame para no editar el original.
-        frame = frame.copy()
         # Obtener la bounding box.
         bounding_box = tracked_obj.object.bounding_box
         # Dibujar sobre el frame.
@@ -76,7 +106,7 @@ class TrackingVideo:
         cv2.line(frame, bounding_box.bottom_left, bounding_box.top_left, color, 2, cv2.LINE_AA)
         return frame
 
-    def _draw_bounding_boxes(self, fid: int, frame: Image) -> Image:
+    def _draw_objects_bounding_boxes(self, fid: int, frame: Image) -> Image:
         # Objetos detectados en el frame fid.
         tracked_objects_in_frame = self.tracked_objects.frame_objects(fid)
         # Dibujar las bounding boxes de cada objeto en el frame fid.
