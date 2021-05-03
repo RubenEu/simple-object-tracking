@@ -63,8 +63,7 @@ class TrackingVideo:
             frame = self._draw_objects_traces(fid, frame)
         return frame
 
-    @staticmethod
-    def _draw_object_trace(fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
+    def _draw_object_trace(self, fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
         """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
         :param fid: número del frame.
@@ -75,9 +74,17 @@ class TrackingVideo:
         positions_centroid = [t_obj.object.center for t_obj in tracked_obj if t_obj.frame <= fid]
         # Dibujar cada una de las posiciones
         prev_position = positions_centroid[0]
+        # Dibujar las líneas.
+        color = self._objects_colors[tracked_obj.id]
+        prev_position = positions_centroid[0]
         for position in positions_centroid:
-            cv2.line(frame, position, prev_position, (255, 43, 155), 2, cv2.LINE_AA)
-            cv2.circle(frame, position, 0, (107, 37, 74), 5, cv2.LINE_AA)
+            cv2.line(frame, position, prev_position, color, 2, cv2.LINE_AA)
+            prev_position = position
+        # Dibujar los puntos.
+        color = (color[0] * 1/2, color[1] * 2/3, 3/4 * color[2])
+        prev_position = positions_centroid[0]
+        for position in positions_centroid:
+            cv2.circle(frame, position, 0, color, 5, cv2.LINE_AA)
             prev_position = position
         return frame
 
