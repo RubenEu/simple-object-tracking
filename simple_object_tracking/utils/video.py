@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from typing import Set, Callable
+from typing import Callable, Dict, Any
 from enum import Enum
 
 from simple_object_detection.typing import Image
@@ -26,7 +26,7 @@ class TrackingVideo:
         """
         self.tracked_objects = tracked_objects
         self.sequence = sequence
-        self._properties: Set[TrackingVideoProperty] = set()
+        self._properties: Dict[TrackingVideoProperty, Any] = {}
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracked_objects), 3))
         self._functions = []
 
@@ -56,17 +56,14 @@ class TrackingVideo:
         :return: frame con los dibujados.
         """
         # DRAW_BOUNDING_BOXES
-        if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
+        if self.get_property(TrackingVideoProperty.DRAW_BOUNDING_BOXES):
             frame = self._draw_objects_bounding_boxes(fid, frame)
         # DRAW TRACES
-        if TrackingVideoProperty.DRAW_TRACES in self._properties:
+        if self.get_property(TrackingVideoProperty.DRAW_TRACES):
             frame = self._draw_objects_traces(fid, frame)
         return frame
 
-    def _draw_object_trace(self,
-                           fid: int,
-                           frame: Image,
-                           tracked_obj: TrackedObject) -> Image:
+    def _draw_object_trace(self, fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
         """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
         :param fid: número del frame.
@@ -130,13 +127,22 @@ class TrackingVideo:
         """
         self._functions.append(function)
 
-    def add_property(self, property_: TrackingVideoProperty) -> None:
-        """Añade una propiedad a la creación del vídeo de seguimiento.
+    def get_property(self, property_: TrackingVideoProperty) -> Any:
+        """Devuelve el valor de una propiedad. Si no se encuentra, devuelve None.
+
+        :param property_: propiedad.
+        :return: valor de la propiedad o None si no existe.
+        """
+        return self._properties.get(property_)
+
+    def set_property(self, property_: TrackingVideoProperty, value: Any) -> None:
+        """Establece una propiedad a la creación del vídeo de seguimiento.
 
         :param property_: propiedad para añadir.
+        :param value: valor de la propiedad.
         :return: None.
         """
-        self._properties.add(property_)
+        self._properties[property_] = value
 
     def remove_property(self, property_: TrackingVideoProperty):
         """Elimina una propiedad a la creación del vídeo de seguimiento.
@@ -144,14 +150,14 @@ class TrackingVideo:
         :param property_: propiedad para eliminar.
         :return: None.
         """
-        self._properties.remove(property_)
+        self._properties.pop(property_)
 
-    def properties(self):
+    def properties(self) -> Dict[TrackingVideoProperty, Any]:
         """Devuelve la lista de propiedades.
 
-        :return: lista de propiedades.
+        :return: diccionario con las propiedades.
         """
-        return list(self._properties)
+        return self._properties
 
     def add_object_information(self):
         ...
