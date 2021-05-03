@@ -59,7 +59,7 @@ class TrackingVideo:
         if TrackingVideoProperty.DRAW_BOUNDING_BOXES in self._properties:
             frame = self._draw_objects_bounding_boxes(fid, frame)
         # DRAW TRACES
-        if TrackingVideoProperty.TRACES in self._properties:
+        if TrackingVideoProperty.DRAW_TRACES in self._properties:
             frame = self._draw_objects_traces(fid, frame)
         return frame
 
