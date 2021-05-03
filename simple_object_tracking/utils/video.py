@@ -78,7 +78,7 @@ class TrackingVideo:
         # Si ese objeto no aparece en el frame, finalizar.
         if len(positions_centroid) == 0:
             return frame
-        # Eliminación de trazados pasados N frames.
+        # TODO: Mostrar solo los que están en el frame!!
 
         # Dibujar cada una de las posiciones
         prev_position = positions_centroid[0]
@@ -96,9 +96,14 @@ class TrackingVideo:
         :param frame: frame.
         :return: frame con los trazados de los objetos aplicados.
         """
+        # Obtener los objetos seguidos que aparecen en el frame fid.
+        tracked_objects_ids = [tracked_object.id
+                               for tracked_object in self.tracked_objects.frame_objects(fid)]
         # Dibujar los trazados de cada objeto hasta el frame fid-ésimo.
         for tracked_obj in self.tracked_objects:
-            frame = self._draw_object_trace(fid, frame, tracked_obj)
+            # Dibujar únicamente si se encuentra en el frame actual.
+            if tracked_obj.id in tracked_objects_ids:
+                frame = self._draw_object_trace(fid, frame, tracked_obj)
         return frame
 
     def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
