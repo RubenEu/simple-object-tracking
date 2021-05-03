@@ -126,7 +126,7 @@ class TrackingVideo:
         Esto puede ser útil para aplicar funciones de homografía, por ejemplo.
 
         :param function: función que recibe una imagen y devuelve una imagen.
-        :return:
+        :return: None.
         """
         self._functions.append(function)
 
