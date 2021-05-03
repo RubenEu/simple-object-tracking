@@ -34,15 +34,17 @@ class TrackingVideo:
     def __getitem__(self, item: int) -> Image:
         """Obtiene el frame item-ésimo con los dibujados aplicados.
 
+        Primeramente aplica las funciones y luego los dibujados internos.
+
         :param item: índice del frame.
         :return: frame con los dibujados aplicados.
         """
         frame = self.sequence[item]
-        # Aplicar dibujados internos.
-        frame = self._apply_internal_drawings(item, frame)
         # Aplicar funciones añadidas.
         for function in self._functions:
             frame = function(frame)
+        # Aplicar dibujados internos.
+        frame = self._apply_internal_drawings(item, frame)
         return frame
 
     def _apply_internal_drawings(self, fid: int, frame: Image) -> Image:
