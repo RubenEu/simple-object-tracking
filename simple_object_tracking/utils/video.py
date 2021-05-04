@@ -19,6 +19,7 @@ class TrackingVideoProperty(Enum):
     DRAW_OBJECTS_BOUNDING_BOXES = 2
     DRAW_OBJECTS_TRACES = 3
     DRAW_FRAME_NUMBER = 10,
+    DRAW_FRAME_TIMESTAMP = 11,
     TEXT_OBJECT_INFORMATION = 100,
     TEXT_FRAME_INFORMATION = 101,
 
@@ -87,6 +88,9 @@ class TrackingVideo:
         # DRAW_FRAME_NUMBER
         if self.get_property(TrackingVideoProperty.DRAW_FRAME_NUMBER):
             frame = self._draw_frame_number(fid, frame)
+        # DRAW_FRAME_TIMESTAMP
+        if self.get_property(TrackingVideoProperty.DRAW_FRAME_NUMBER):
+            frame = self._draw_frame_timestamp(fid, frame)
         # Devolver frame con los dibujados.
         return frame
 
@@ -142,6 +146,23 @@ class TrackingVideo:
         # Dibujar texto.
         text = f'Frame {fid}'
         position = (30, self.input_sequence.properties().height - 30)
+        cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
+        return frame
+
+    def _draw_frame_timestamp(self, fid: int, frame: Image) -> Image:
+        """Escribe el instante de tiempo en el que se encuentra la secuencia (en segundos)..
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :return: frame con el instante de tiempo en segundos.
+        """
+        # Propiedades del texto.
+        text_format = self.get_property(TrackingVideoProperty.TEXT_FRAME_INFORMATION)
+        font, color, linetype, thickness, font_scale, _ = text_format
+        # Dibujar texto.
+        second = fid / self.input_sequence.properties().fps
+        text = f'Timestamp {second} s'
+        position = (30, self.input_sequence.properties().height - 80)
         cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
         return frame
 
