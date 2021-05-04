@@ -2,24 +2,29 @@ import cv2
 import numpy as np
 from typing import Callable, Dict, Any
 from enum import Enum
-
 from tqdm import tqdm
 
 from simple_object_detection.typing import Image
 from simple_object_detection.utils import StreamSequence
 from simple_object_detection.utils.video import StreamSequenceWriter
-from simple_object_tracking.datastructures import TrackedObjectDetection, TrackedObject, \
-    TrackedObjects
+from simple_object_tracking.datastructures import (TrackedObjectDetection,
+                                                   TrackedObject,
+                                                   TrackedObjects)
 
 
 class TrackingVideoProperty(Enum):
     DRAW_BOUNDING_BOXES = 1
     DRAW_TRACES = 2
+    DRAW_FRAME_NUMBER = 3
 
 
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
     """
+    default_properties = {
+
+    }
+
     def __init__(self, tracked_objects: TrackedObjects, input_sequence: StreamSequence):
         """
 
@@ -28,7 +33,7 @@ class TrackingVideo:
         """
         self.tracked_objects = tracked_objects
         self.input_sequence = input_sequence
-        self._properties: Dict[TrackingVideoProperty, Any] = {}
+        self._properties: Dict[TrackingVideoProperty, Any] = self.default_properties.copy()
         self._objects_colors = np.random.uniform(0, 255, size=(len(tracked_objects), 3))
         self._functions = []
 
@@ -60,9 +65,29 @@ class TrackingVideo:
         # DRAW_BOUNDING_BOXES
         if self.get_property(TrackingVideoProperty.DRAW_BOUNDING_BOXES):
             frame = self._draw_objects_bounding_boxes(fid, frame)
-        # DRAW TRACES
+        # DRAW_TRACES
         if self.get_property(TrackingVideoProperty.DRAW_TRACES):
             frame = self._draw_objects_traces(fid, frame)
+        # DRAW_FRAME_NUMBER
+        if self.get_property(TrackingVideoProperty.DRAW_FRAME_NUMBER):
+            frame = self._draw_frame_number(fid, frame)
+        # Devolver frame con los dibujados.
+        return frame
+
+    def _draw_frame_number(self, fid: int, frame: Image) -> Image:
+        """Escribe el número del frame en el que se encuentra en cada instante.
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :return: frame con el número de frame.
+        """
+        text = f'Frame {fid}'
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_scale = 1.2
+        color = (255, 255, 255)
+        position = (30, self.input_sequence.properties().height - 30)
+        thickness = 2
+        cv2.putText(frame, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
         return frame
 
     def _draw_object_trace(self, fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
