@@ -1,3 +1,4 @@
 simple-object-detection
 numpy
 opencv-python
+tqdm
