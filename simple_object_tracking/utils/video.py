@@ -13,16 +13,18 @@ from simple_object_tracking.datastructures import (TrackedObjectDetection,
 
 
 class TrackingVideoProperty(Enum):
-    DRAW_BOUNDING_BOXES = 1
-    DRAW_TRACES = 2
-    DRAW_FRAME_NUMBER = 3
+    DRAW_OBJECTS = 0
+    DRAW_OBJECTS_IDS = 1
+    DRAW_OBJECTS_BOUNDING_BOXES = 2
+    DRAW_OBJECTS_TRACES = 3
+    DRAW_FRAME_NUMBER = 4
 
 
 class TrackingVideo:
     """Clase para el dibujado de información sobre un vídeo con seguimiento de objetos.
     """
     default_properties = {
-
+        TrackingVideoProperty.DRAW_OBJECTS: True,
     }
 
     def __init__(self, tracked_objects: TrackedObjects, input_sequence: StreamSequence):
@@ -62,16 +64,52 @@ class TrackingVideo:
         :param frame: frame.
         :return: frame con los dibujados.
         """
-        # DRAW_BOUNDING_BOXES
-        if self.get_property(TrackingVideoProperty.DRAW_BOUNDING_BOXES):
-            frame = self._draw_objects_bounding_boxes(fid, frame)
-        # DRAW_TRACES
-        if self.get_property(TrackingVideoProperty.DRAW_TRACES):
-            frame = self._draw_objects_traces(fid, frame)
+        # DRAW_OBJECTS
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS):
+            frame = self._draw_objects(fid, frame)
         # DRAW_FRAME_NUMBER
         if self.get_property(TrackingVideoProperty.DRAW_FRAME_NUMBER):
             frame = self._draw_frame_number(fid, frame)
         # Devolver frame con los dibujados.
+        return frame
+
+    def _draw_objects(self, fid: int, frame: Image) -> Image:
+        """Realiza el dibujado en los objetos que aparecen en el frame actual.
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :return: frame con los objetos dibujados.
+        """
+        # Objetos detectados en el frame fid.
+        tracked_objects_in_frame = self.tracked_objects.frame_objects(fid)
+        # Dibujar la información de los objetos si aparecen en el frame actual.
+        for tracked_object_detection in tracked_objects_in_frame:
+            frame = self._draw_object(fid, frame, self.tracked_objects[tracked_object_detection.id],
+                                      tracked_object_detection)
+        return frame
+
+    def _draw_object(self,
+                     fid: int,
+                     frame: Image,
+                     tracked_object: TrackedObject,
+                     tracked_object_detection: TrackedObjectDetection) -> Image:
+        """Realiza el dibujado de un objeto en el frame actual.
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :param tracked_object: objeto con el seguimiento.
+        :param tracked_object_detection: detección del objeto seguido en el frame actual.
+        :return: frame con el objeto dibujados.
+        """
+        # DRAW_OBJECTS_IDS
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_IDS):
+            frame = self._draw_object_id(frame, tracked_object_detection)
+        # DRAW_OBJECTS_BOUNDING_BOXES
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_BOUNDING_BOXES):
+            frame = self._draw_object_bounding_box(frame, tracked_object_detection)
+        # DRAW_OBJECTS_TRACES
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_TRACES):
+            frame = self._draw_object_trace(fid, frame, tracked_object)
         return frame
 
     def _draw_frame_number(self, fid: int, frame: Image) -> Image:
@@ -81,28 +119,54 @@ class TrackingVideo:
         :param frame: frame.
         :return: frame con el número de frame.
         """
-        text = f'Frame {fid}'
+        # Propiedades del texto.
         font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 1.2
         color = (255, 255, 255)
-        position = (30, self.input_sequence.properties().height - 30)
+        linetype = cv2.LINE_AA
         thickness = 2
-        cv2.putText(frame, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
+        font_scale = 1.2
+        # Dibujar texto.
+        text = f'Frame {fid}'
+        position = (30, self.input_sequence.properties().height - 30)
+        cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
         return frame
 
-    def _draw_object_trace(self, fid: int, frame: Image, tracked_obj: TrackedObject) -> Image:
+    def _draw_object_id(self,
+                        frame: Image,
+                        tracked_object_detection: TrackedObjectDetection) -> Image:
+        """Dibuja el id del objeto.
+
+        :param frame: frame.
+        :param tracked_object_detection: detección del objeto seguido.
+        :return: frame con el id del objeto dibujado.
+        """
+        # Propiedades del texto.
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        color = (255, 255, 255)
+        linetype = cv2.LINE_AA
+        thickness = 2
+        font_scale = 0.7
+        # Dibujar texto.
+        text = f'OBJECT ID {tracked_object_detection.id}'
+        position = tracked_object_detection.object.bounding_box.top_left
+        position = position.x, position.y - 8
+        cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
+        # Devolver frame.
+        return frame
+
+    def _draw_object_trace(self, fid: int, frame: Image, tracked_object: TrackedObject) -> Image:
         """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
         :param fid: número del frame.
         :param frame: frame.
-        :param tracked_obj: estructura del seguimiento del objeto.
+        :param tracked_object: estructura del seguimiento del objeto.
         :return: imagen con el seguimiento del objeto.
         """
-        positions_centroid = [t_obj.object.center for t_obj in tracked_obj if t_obj.frame <= fid]
+        positions_centroid = [t_obj.object.center for t_obj in tracked_object if t_obj.frame <= fid]
         # Dibujar cada una de las posiciones
         prev_position = positions_centroid[0]
         # Dibujar las líneas.
-        color = self._objects_colors[tracked_obj.id]
+        color = self._objects_colors[tracked_object.id]
         prev_position = positions_centroid[0]
         for position in positions_centroid:
             cv2.line(frame, position, prev_position, color, 2, cv2.LINE_AA)
@@ -115,41 +179,23 @@ class TrackingVideo:
             prev_position = position
         return frame
 
-    def _draw_objects_traces(self, fid: int, frame: Image) -> Image:
-        """Dibujar todos los trazados de los objetos que aparecen en el frame hasta el frame en el
-        que se encuentran.
+    def _draw_object_bounding_box(self,
+                                  frame: Image,
+                                  tracked_object_detection: TrackedObjectDetection) -> Image:
+        """Dibuja la caja delimitadora de un objeto.
 
-        :param fid: número del frame.
         :param frame: frame.
-        :return: frame con los trazados de los objetos aplicados.
+        :param tracked_object_detection: detección del objeto seguido.
+        :return: frame con la bounding box añadida al objeto.
         """
-        # Obtener los objetos seguidos que aparecen en el frame fid.
-        tracked_objects_ids = [tracked_object.id
-                               for tracked_object in self.tracked_objects.frame_objects(fid)]
-        # Dibujar los trazados de cada objeto hasta el frame fid-ésimo.
-        for tracked_obj in self.tracked_objects:
-            # Dibujar únicamente si se encuentra en el frame actual.
-            if tracked_obj.id in tracked_objects_ids:
-                frame = self._draw_object_trace(fid, frame, tracked_obj)
-        return frame
-
-    def _draw_object_bounding_box(self, frame: Image, tracked_obj: TrackedObjectDetection) -> Image:
         # Obtener la bounding box.
-        bounding_box = tracked_obj.object.bounding_box
+        bounding_box = tracked_object_detection.object.bounding_box
         # Dibujar sobre el frame.
-        color = self._objects_colors[tracked_obj.id]
+        color = self._objects_colors[tracked_object_detection.id]
         cv2.line(frame, bounding_box.top_left, bounding_box.top_right, color, 2, cv2.LINE_AA)
         cv2.line(frame, bounding_box.top_right, bounding_box.bottom_right, color, 2, cv2.LINE_AA)
         cv2.line(frame, bounding_box.bottom_right, bounding_box.bottom_left, color, 2, cv2.LINE_AA)
         cv2.line(frame, bounding_box.bottom_left, bounding_box.top_left, color, 2, cv2.LINE_AA)
-        return frame
-
-    def _draw_objects_bounding_boxes(self, fid: int, frame: Image) -> Image:
-        # Objetos detectados en el frame fid.
-        tracked_objects_in_frame = self.tracked_objects.frame_objects(fid)
-        # Dibujar las bounding boxes de cada objeto en el frame fid.
-        for tracked_obj in tracked_objects_in_frame:
-            frame = self._draw_object_bounding_box(frame, tracked_obj)
         return frame
 
     def add_function(self, function: Callable[[Image], Image]) -> None:
@@ -193,12 +239,6 @@ class TrackingVideo:
         :return: diccionario con las propiedades.
         """
         return self._properties
-
-    def add_object_information(self):
-        ...
-
-    def add_frame_information(self):
-        ...
 
     def generate_video(self, file_output: str) -> None:
         """Genera la secuencia de vídeo y la guarda en un archivo.
