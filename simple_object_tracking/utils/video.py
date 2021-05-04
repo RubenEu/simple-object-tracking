@@ -10,6 +10,7 @@ from simple_object_detection.utils.video import StreamSequenceWriter
 from simple_object_tracking.datastructures import (TrackedObjectDetection,
                                                    TrackedObject,
                                                    TrackedObjects)
+from simple_object_tracking.utils.text import TextFormat
 
 
 class TrackingVideoProperty(Enum):
@@ -17,7 +18,9 @@ class TrackingVideoProperty(Enum):
     DRAW_OBJECTS_IDS = 1
     DRAW_OBJECTS_BOUNDING_BOXES = 2
     DRAW_OBJECTS_TRACES = 3
-    DRAW_FRAME_NUMBER = 4
+    DRAW_FRAME_NUMBER = 10,
+    TEXT_OBJECT_INFORMATION = 100,
+    TEXT_FRAME_INFORMATION = 101,
 
 
 class TrackingVideo:
@@ -25,6 +28,20 @@ class TrackingVideo:
     """
     default_properties = {
         TrackingVideoProperty.DRAW_OBJECTS: True,
+        TrackingVideoProperty.TEXT_FRAME_INFORMATION: TextFormat(
+            font=cv2.FONT_HERSHEY_SIMPLEX,
+            color=(255, 255, 255),
+            linetype=cv2.LINE_AA,
+            thickness=2,
+            font_scale=1.2
+        ),
+        TrackingVideoProperty.TEXT_OBJECT_INFORMATION: TextFormat(
+            font=cv2.FONT_HERSHEY_SIMPLEX,
+            color=(255, 255, 255),
+            linetype=cv2.LINE_AA,
+            thickness=2,
+            font_scale=0.7
+        ),
     }
 
     def __init__(self, tracked_objects: TrackedObjects, input_sequence: StreamSequence):
@@ -120,11 +137,8 @@ class TrackingVideo:
         :return: frame con el número de frame.
         """
         # Propiedades del texto.
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        color = (255, 255, 255)
-        linetype = cv2.LINE_AA
-        thickness = 2
-        font_scale = 1.2
+        text_format = self.get_property(TrackingVideoProperty.TEXT_FRAME_INFORMATION)
+        font, color, linetype, thickness, font_scale, _ = text_format
         # Dibujar texto.
         text = f'Frame {fid}'
         position = (30, self.input_sequence.properties().height - 30)
@@ -141,11 +155,8 @@ class TrackingVideo:
         :return: frame con el id del objeto dibujado.
         """
         # Propiedades del texto.
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        color = (255, 255, 255)
-        linetype = cv2.LINE_AA
-        thickness = 2
-        font_scale = 0.7
+        text_format = self.get_property(TrackingVideoProperty.TEXT_OBJECT_INFORMATION)
+        font, color, linetype, thickness, font_scale, _ = text_format
         # Dibujar texto.
         text = f'OBJECT ID {tracked_object_detection.id}'
         position = tracked_object_detection.object.bounding_box.top_left
