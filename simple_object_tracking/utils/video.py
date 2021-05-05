@@ -307,7 +307,7 @@ class TrackingVideo:
         :return: None.
         """
         output_stream = StreamSequenceWriter(file_output, self.input_sequence.properties())
-        t = tqdm(total=len(self.input_sequence))
+        t = tqdm(total=len(self.input_sequence), desc='Generating video')
         for frame in self:
             output_stream.write(frame)
             t.update()

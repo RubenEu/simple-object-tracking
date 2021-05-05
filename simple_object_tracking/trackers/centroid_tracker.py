@@ -1,12 +1,12 @@
 from typing import List
 
+from tqdm import tqdm
+
 from simple_object_detection.object import Object
 from simple_object_tracking.datastructures import TrackedObjectDetection
 
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import euclidean_norm
-
-# TODO: Hay que cambiar muchas cosas debido a los cambios en datastructures.py
 
 
 class CentroidTracker(ObjectTracker):
@@ -89,6 +89,7 @@ class CentroidTracker(ObjectTracker):
         for object_detected in self.frame_objects(0):
             self.objects.register_object(object_detected, 0)
         # Paso 2. Emparejar, registrar, y desregistrar objetos en el resto de frames.
+        t = tqdm(total=len(self.sequence), desc='CentroidTracker')
         for frame_actual in range(1, len(self.sequence)):
             # 1. Emparejar objetos.
             # Objetos registrados hasta el momento.
@@ -110,3 +111,4 @@ class CentroidTracker(ObjectTracker):
                 frame_actual,
                 self.frames_to_unregister_missing_objects
             )
+            t.update()
