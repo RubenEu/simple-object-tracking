@@ -79,9 +79,13 @@ class TrackedObject:
         :param ids: lista de identificadores de seguimiento para eliminar.
         :return: None.
         """
-        for id_ in ids:
-            self.frames.pop(id_)
-            self.detections.pop(id_)
+        frames = [frame for fid, frame in enumerate(self.frames) if fid in ids]
+        detections = [detection for did, detection in enumerate(self.detections) if did in ids]
+        # Proceder a la eliminación.
+        for frame in frames:
+            self.frames.remove(frame)
+        for detection in detections:
+            self.detections.remove(detection)
 
 
     def interpolate_positions(self):
