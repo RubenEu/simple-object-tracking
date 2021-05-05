@@ -71,6 +71,19 @@ class TrackedObject:
             return None
         return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
 
+    def remove_tracked_positions(self, ids: List[int]) -> None:
+        """Elimina los seguimientos indicados.
+
+        Útil por ejemplo para las detecciones iniciales o finales que produzcan valores extraños.
+
+        :param ids: lista de identificadores de seguimiento para eliminar.
+        :return: None.
+        """
+        for id_ in ids:
+            self.frames.pop(id_)
+            self.detections.pop(id_)
+
+
     def interpolate_positions(self):
         """TODO: Realiza la interpolación de las posiciones entre la primera y la última.
             Planear cómo se haría para funcionar con los métodos externos que usan el objeto.
