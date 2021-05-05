@@ -18,6 +18,7 @@ class TrackingVideoProperty(Enum):
     DRAW_OBJECTS_IDS = 1
     DRAW_OBJECTS_BOUNDING_BOXES = 2
     DRAW_OBJECTS_TRACES = 3
+    DRAW_OBJECTS_BOUNDING_BOXES_TRACES = 4,
     DRAW_FRAME_NUMBER = 10,
     DRAW_FRAME_TIMESTAMP = 11,
     TEXT_OBJECT_INFORMATION = 100,
@@ -131,6 +132,9 @@ class TrackingVideo:
         # DRAW_OBJECTS_TRACES
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_TRACES):
             frame = self._draw_object_trace(fid, frame, tracked_object)
+        # DRAW_OBJECTS_BOUNDING_BOXES_TRACES
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_BOUNDING_BOXES_TRACES):
+            frame = self._draw_object_bounding_box_trace(fid, frame, tracked_object)
         return frame
 
     def _draw_frame_number(self, fid: int, frame: Image) -> Image:
@@ -195,7 +199,7 @@ class TrackingVideo:
         :return: imagen con el seguimiento del objeto.
         """
         positions_centroid = [t_obj.object.center for t_obj in tracked_object if t_obj.frame <= fid]
-        # Dibujar cada una de las posiciones
+        # Dibujar centroides.
         prev_position = positions_centroid[0]
         # Dibujar las líneas.
         color = self._objects_colors[tracked_object.id]
@@ -209,6 +213,30 @@ class TrackingVideo:
         for position in positions_centroid:
             cv2.circle(frame, position, 0, color, 5, cv2.LINE_AA)
             prev_position = position
+        return frame
+
+    def _draw_object_bounding_box_trace(self,
+                                        fid: int,
+                                        frame: Image,
+                                        tracked_object: TrackedObject) -> Image:
+        """Dibuja los trazados del bounding box de un objeto..
+
+        :param fid: número del frame.
+        :param frame: frame.
+        :param tracked_object: estructura del seguimiento del objeto.
+        :return: imagen con el seguimiento del objeto.
+        """
+        bounding_boxes = [t_obj.object.bounding_box
+                          for t_obj in tracked_object if t_obj.frame <= fid]
+        # Dibujar bounding boxes.
+        color = self._objects_colors[tracked_object.id]
+        prev_bounding_box = bounding_boxes[0]
+        for bounding_box in bounding_boxes:
+            for position_id in range(len(bounding_box)):
+                position = bounding_box[position_id]
+                prev_position = prev_bounding_box[position_id]
+                cv2.line(frame, position, prev_position, color, 1, cv2.LINE_AA)
+            prev_bounding_box = bounding_box
         return frame
 
     def _draw_object_bounding_box(self,
