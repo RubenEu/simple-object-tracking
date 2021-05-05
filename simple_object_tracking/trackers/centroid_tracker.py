@@ -51,6 +51,10 @@ class CentroidTracker(ObjectTracker):
         # emparejamiento.
         if len(objs_actual) == 0:
             return
+        # Mejora: ordenar los objetos detectados en el frame actual por puntuación, así ante un
+        # empate futuro, se emparejará con el que más puntuación haya obtenido.
+        # TODO: Ver cómo afecta.
+        # objs_actual.sort(reverse=True, key=lambda obj: obj.score)
         # Para cada uno de los objetos actuales, buscar con cuál de los objetos registrados
         # emparejar.
         for obj_actual_id, obj_actual_detection in enumerate(objs_actual):
