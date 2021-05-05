@@ -87,7 +87,6 @@ class TrackedObject:
         for detection in detections:
             self.detections.remove(detection)
 
-
     def interpolate_positions(self):
         """TODO: Realiza la interpolación de las posiciones entre la primera y la última.
             Planear cómo se haría para funcionar con los métodos externos que usan el objeto.
