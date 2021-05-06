@@ -255,6 +255,9 @@ class TrackingVideo:
         :return: imagen con el seguimiento del objeto.
         """
         positions_centroid = [t_obj.object.center for t_obj in tracked_object if t_obj.frame <= fid]
+        # Comprobación de que se ha obtenido al menos una posición.
+        if len(positions_centroid) == 0:
+            return frame
         # Dibujar centroides.
         prev_position = positions_centroid[0]
         # Dibujar las líneas.
