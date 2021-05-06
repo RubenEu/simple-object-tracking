@@ -242,26 +242,6 @@ class TrackingVideo:
         cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
         return frame
 
-    def _draw_object_id(self,
-                        frame: Image,
-                        tracked_object_detection: TrackedObjectDetection) -> Image:
-        """Dibuja el id del objeto.
-
-        :param frame: frame.
-        :param tracked_object_detection: detección del objeto seguido.
-        :return: frame con el id del objeto dibujado.
-        """
-        # Propiedades del texto.
-        text_format = self.get_property(TrackingVideoProperty.TEXT_OBJECT_INFORMATION)
-        font, color, linetype, thickness, font_scale, _ = text_format
-        # Dibujar texto.
-        text = f'OBJECT ID {tracked_object_detection.id}'
-        position = tracked_object_detection.object.bounding_box.top_left
-        position = position.x, position.y - 8
-        cv2.putText(frame, text, position, font, font_scale, color, thickness, linetype)
-        # Devolver frame.
-        return frame
-
     def _draw_object_trace(self, fid: int, frame: Image, tracked_object: TrackedObject) -> Image:
         """Dibuja los trazados de un objeto hasta el frame en el que se encuentra.
 
