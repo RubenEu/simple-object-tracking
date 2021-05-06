@@ -287,6 +287,9 @@ class TrackingVideo:
         """
         bounding_boxes = [t_obj.object.bounding_box
                           for t_obj in tracked_object if t_obj.frame <= fid]
+        # Comprobación de que se ha obtenido al menos una posición.
+        if len(bounding_boxes) == 0:
+            return frame
         # Dibujar bounding boxes.
         color = self._objects_colors[tracked_object.id]
         prev_bounding_box = bounding_boxes[0]
