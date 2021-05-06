@@ -48,7 +48,7 @@ class TrackingVideo:
             color=(255, 255, 255),
             linetype=cv2.LINE_AA,
             thickness=2,
-            font_scale=0.65,
+            font_scale=0.9,
             bottom_left_origin=False
         ),
     }
