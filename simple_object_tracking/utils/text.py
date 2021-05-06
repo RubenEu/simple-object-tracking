@@ -8,4 +8,4 @@ class TextFormat(NamedTuple):
     linetype: int
     thickness: int
     font_scale: float
-    bottomLeftOrigin: bool = True
+    bottom_left_origin: bool = False

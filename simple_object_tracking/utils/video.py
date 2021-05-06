@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from typing import Callable, Dict, Any
+from typing import Callable, Dict, Any, List
 from enum import Enum
 from tqdm import tqdm
 
@@ -19,6 +19,8 @@ class TrackingVideoProperty(Enum):
     DRAW_OBJECTS_BOUNDING_BOXES = 2
     DRAW_OBJECTS_TRACES = 3
     DRAW_OBJECTS_BOUNDING_BOXES_TRACES = 4,
+    DRAW_OBJECTS_ESTIMATED_SPEED = 5,
+    DRAW_OBJECTS_MEASURED_SPEED = 6,
     DRAW_FRAME_NUMBER = 10,
     DRAW_FRAME_TIMESTAMP = 11,
     TEXT_OBJECT_INFORMATION = 100,
@@ -35,14 +37,16 @@ class TrackingVideo:
             color=(255, 255, 255),
             linetype=cv2.LINE_AA,
             thickness=2,
-            font_scale=1.2
+            font_scale=1.2,
+            bottom_left_origin=False
         ),
         TrackingVideoProperty.TEXT_OBJECT_INFORMATION: TextFormat(
             font=cv2.FONT_HERSHEY_SIMPLEX,
             color=(255, 255, 255),
             linetype=cv2.LINE_AA,
             thickness=2,
-            font_scale=0.7
+            font_scale=0.65,
+            bottom_left_origin=False
         ),
     }
 
@@ -123,9 +127,11 @@ class TrackingVideo:
         :param tracked_object_detection: detección del objeto seguido en el frame actual.
         :return: frame con el objeto dibujados.
         """
+        # Inicializar la información del objeto
+        object_information_texts = []
         # DRAW_OBJECTS_IDS
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_IDS):
-            frame = self._draw_object_id(frame, tracked_object_detection)
+            object_information_texts.append(f'ID {tracked_object_detection.id}')
         # DRAW_OBJECTS_BOUNDING_BOXES
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_BOUNDING_BOXES):
             frame = self._draw_object_bounding_box(frame, tracked_object_detection)
@@ -135,6 +141,39 @@ class TrackingVideo:
         # DRAW_OBJECTS_BOUNDING_BOXES_TRACES
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_BOUNDING_BOXES_TRACES):
             frame = self._draw_object_bounding_box_trace(fid, frame, tracked_object)
+        # Dibujar la información del vehículo
+        frame = self._draw_object_informations(fid, frame, tracked_object, tracked_object_detection,
+                                               object_information_texts)
+        return frame
+
+    def _draw_object_informations(self,
+                                  fid: int,
+                                  frame: Image,
+                                  tracked_object: TrackedObject,
+                                  tracked_object_detection: TrackedObjectDetection,
+                                  object_informations: List[str]) -> Image:
+        """Dibuja los textos de información del vehículo.
+
+        :param fid: identificador del frame.
+        :param frame: frame.
+        :param tracked_object: detección del objeto seguido.
+        :param tracked_object_detection:
+        :return: frame con las informaciones del objeto dibujadas.
+        """
+        # Propiedades del texto.
+        text_format = self.get_property(TrackingVideoProperty.TEXT_OBJECT_INFORMATION)
+        font, color, linetype, thickness, font_scale, blo = text_format
+        margin = 0, 8
+        # Posición inicial.
+        object_top_left = tracked_object_detection.object.bounding_box.top_left
+        next_position = object_top_left.x, object_top_left.y - margin[1]
+        # Dibujar textos.
+        for text in object_informations:
+            size, _ = cv2.getTextSize(text, font, font_scale, thickness)
+            cv2.putText(frame, text, next_position, font, font_scale, color, thickness, linetype, blo)
+            # Calcular la posición del siguiente texto.
+            next_position = next_position[0], next_position[1] - size[1] - margin[1]
+        # Devolver el frame con los dibujados.
         return frame
 
     def _draw_frame_number(self, fid: int, frame: Image) -> Image:
