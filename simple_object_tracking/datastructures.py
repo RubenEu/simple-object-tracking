@@ -115,9 +115,20 @@ class TrackedObject:
         except ValueError:
             return None
 
-    def interpolate_positions(self):
-        """TODO: Realiza la interpolación de las posiciones entre la primera y la última.
-            Planear cómo se haría para funcionar con los métodos externos que usan el objeto.
+    def smooth_estimations(self):
+        """Suaviza las posiciones de las estimaciones (centro y bounding boxes).
+
+        TODO
+
+        :return:
+        """
+
+    def remove_outliers(self):
+        """Elimina los valores extraños en las estimaciones.
+
+        TODO
+
+        :return:
         """
 
 
