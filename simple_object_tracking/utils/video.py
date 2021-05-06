@@ -172,6 +172,10 @@ class TrackingVideo:
         # Obtener la velocidad media en este instante y devolverla.
         index = tracked_object.index_frame(tracked_object_detection.frame)
         velocities = estimations[tracked_object.id].velocities
+        # Si no hay estimaciones, devolver 0.
+        if len(velocities) == 0:
+            return 0
+        # Obtener la velocidad de esta detección o la última registrada (estimada).
         try:
             velocity = velocities[index]
         except IndexError:
