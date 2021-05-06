@@ -207,11 +207,13 @@ class TrackedObjects:
         """
         # Analizar la situación de cada objeto.
         for tracked_object in self._tracked_objects:
-            frames_elapsed = frame - tracked_object[-1].frame
-            # Si ha desaparecido una cantidad de frames mayor que la indicada, cambiar el estado de
-            # registro a False. Esto indicará que el objeto está desregistrado.
-            if frames_elapsed > max_frames_missing:
-                tracked_object.status = False
+            # Comprobar que haya más de un seguimiento, o puede resultar en un error inesperado.
+            if len(tracked_object) > 0:
+                frames_elapsed = frame - tracked_object[-1].frame
+                # Si ha desaparecido una cantidad de frames mayor que la indicada, cambiar el estado
+                # de registro a False. Esto indicará que el objeto está desregistrado.
+                if frames_elapsed > max_frames_missing:
+                    tracked_object.status = False
 
     def frame_objects(self, frame: int) -> List[TrackedObjectDetection]:
         """Crea una lista de los objetos que hay en un frame.
