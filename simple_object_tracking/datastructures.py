@@ -87,6 +87,30 @@ class TrackedObject:
         for detection in detections:
             self.detections.remove(detection)
 
+    def index_detection(self, detection: Object) -> Optional[int]:
+        """Devuelve el índice dentro de los seguimientos del objeto en el que se encontró esa
+        detección.
+
+        :param detection: detección de la que se busca el índice.
+        :return: índice si es que está esa detección.
+        """
+        try:
+            return self.detections.index(detection)
+        except ValueError:
+            return None
+
+    def index_frame(self, frame: int) -> Optional[int]:
+        """Devuelve el índice dentro de los seguimientos del objeto en el que se detectó en el frame
+        indicado.
+
+        :param frame: número del frame en de la que se busca el índice del seguimiento del objeto.
+        :return: índice si es que está esa detección.
+        """
+        try:
+            return self.frames.index(frame)
+        except ValueError:
+            return None
+
     def interpolate_positions(self):
         """TODO: Realiza la interpolación de las posiciones entre la primera y la última.
             Planear cómo se haría para funcionar con los métodos externos que usan el objeto.
