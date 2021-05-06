@@ -16,18 +16,22 @@ class TrackedObject:
     """Estructura que almacena la información de un objeto seguido a lo largo de una secuencia.
     """
 
-    def __init__(self, obj_id: int, status: bool, ini_frame: int, ini_obj: Object):
+    def __init__(self,
+                 obj_id: int,
+                 status: bool,
+                 ini_frame: Optional[int],
+                 ini_obj: Optional[Object]):
         """
 
         :param obj_id: identificador del objeto seguido.
         :param status: estado del objeto en el seguimiento.
-        :param ini_frame: frame inicial.
-        :param ini_obj: detección inicial.
+        :param ini_frame: frame inicial o None. Si es None, ``ini_obj`` debe ser None también.
+        :param ini_obj: detección inicial o None.  Si es None, ``ini_frame`` debe ser None también.
         """
         self.id = obj_id
         self.status = status
-        self.frames = [ini_frame]
-        self.detections = [ini_obj]
+        self.frames = [ini_frame] if ini_frame is not None else []
+        self.detections = [ini_obj] if ini_obj is not None else []
 
     def __getitem__(self, item: int) -> TrackedObjectDetection:
         """Devuelve el frame y la detección del objeto registrada.
@@ -241,6 +245,15 @@ class TrackedObjects:
             if obj.status:
                 registered_objects.append(obj[-1])
         return registered_objects
+
+    def insert_empty_object(self, id_: int) -> None:
+        """Añade un objeto vacío en la posición indicada.
+
+        :param id_: índice donde añadirlo.
+        :return: None.
+        """
+        empty_object = TrackedObject(id_, False, None, None)
+        self._tracked_objects.insert(id_, empty_object)
 
     def purge_objects(self, ids: List[int]) -> None:
         """Elimina los objetos indicados y restablece los ids para que mantengan un orden
