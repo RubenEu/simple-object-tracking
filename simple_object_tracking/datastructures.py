@@ -255,7 +255,11 @@ class TrackedObjects:
         :return: None.
         """
         empty_object = TrackedObject(id_, False, None, None)
+        # Insertar el objeto vacío.
         self._tracked_objects.insert(id_, empty_object)
+        # Reajustar los ids de todos los objetos siguientes.
+        for tracked_object in self._tracked_objects[id_+1:]:
+            tracked_object.id += 1
 
     def purge_objects(self, ids: List[int]) -> None:
         """Elimina los objetos indicados y restablece los ids para que mantengan un orden
