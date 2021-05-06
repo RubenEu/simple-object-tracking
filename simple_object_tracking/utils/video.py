@@ -11,6 +11,7 @@ from simple_object_tracking.datastructures import (TrackedObjectDetection,
                                                    TrackedObject,
                                                    TrackedObjects)
 from simple_object_tracking.utils.text import TextFormat
+from vehicle_speed_estimation.estimation_model import EstimationResult
 
 
 class TrackingVideoProperty(Enum):
@@ -25,6 +26,8 @@ class TrackingVideoProperty(Enum):
     DRAW_FRAME_TIMESTAMP = 11,
     TEXT_OBJECT_INFORMATION = 100,
     TEXT_FRAME_INFORMATION = 101,
+    OBJECTS_MEASURED_SPEEDS = 200,
+    OBJECTS_ESTIMATIONS = 201,
 
 
 class TrackingVideo:
@@ -131,7 +134,10 @@ class TrackingVideo:
         object_information_texts = []
         # DRAW_OBJECTS_IDS
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_IDS):
-            object_information_texts.append(f'ID {tracked_object_detection.id}')
+            object_information_texts.append(f'ID: {tracked_object_detection.id}')
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_ESTIMATED_SPEED):
+            speed = self._get_object_estimated_speed(tracked_object, tracked_object_detection)
+            object_information_texts.append(f'Estimated speed: {speed} Km/h')
         # DRAW_OBJECTS_BOUNDING_BOXES
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_BOUNDING_BOXES):
             frame = self._draw_object_bounding_box(frame, tracked_object_detection)
@@ -145,6 +151,33 @@ class TrackingVideo:
         frame = self._draw_object_informations(fid, frame, tracked_object, tracked_object_detection,
                                                object_information_texts)
         return frame
+
+    def _get_object_estimated_speed(self,
+                                    tracked_object: TrackedObject,
+                                    tracked_object_detection: TrackedObjectDetection) -> float:
+        """Obtiene la velocidad estimada del vehículo en el instante actual.
+
+        El instante actual se obtiene a partir de la detección actual pasada por el parámetro+
+        ``tracked_object_detection``.
+
+        :param tracked_object: seguimiento del objeto.
+        :param tracked_object_detection: detección del seguimiento del objeto del momento actual.
+        :return: velocidad del objeto estimada en este instante.
+        """
+        estimations: List[EstimationResult] = self.get_property(
+            TrackingVideoProperty.OBJECTS_ESTIMATIONS)
+        # Comprobar que se han establecido las estimaciones de los objetos.
+        if estimations is None:
+            raise Exception('Se deben introducir las estimaciones de los objetos.')
+        # Obtener la velocidad media en este instante y devolverla.
+        index = tracked_object.index_frame(tracked_object_detection.frame)
+        velocities = estimations[tracked_object.id].velocities
+        try:
+            velocity = velocities[index]
+        except IndexError:
+            velocity = velocities[-1]
+        speed = np.linalg.norm(np.array(velocity))
+        return round(float(speed), 2)
 
     def _draw_object_informations(self,
                                   fid: int,
