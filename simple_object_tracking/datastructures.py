@@ -1,4 +1,4 @@
-from typing import List, Optional, NamedTuple
+from typing import List, Optional, NamedTuple, Tuple
 
 from simple_object_detection.object import Object
 
@@ -259,15 +259,18 @@ class TrackedObjects:
             for tracked_object in self._tracked_objects[object_.id:]:
                 tracked_object.id -= 1
 
-    def remove_objects_with_less_detections_than(self, minimum_detections: int) -> List[int]:
+    def remove_objects_with_less_detections_than(self,
+                                                 minimum_detections: int) -> List[Tuple[int, int]]:
         """Elimina los objetos que tienen un número de detecciones menor al indicado.
 
         :param minimum_detections: número mínimo de detecciones que deben tener los objetos.
-        :return: identificadores de los objetos eliminados.
+        :return: tupla con el identificador y número de detecciones de cada objeto eliminado.
         """
-        to_remove = [tracked_object.id for tracked_object in self._tracked_objects
+        to_remove = [(tracked_object.id, len(tracked_object))
+                     for tracked_object in self._tracked_objects
                      if len(tracked_object) < minimum_detections]
-        self.purge_objects(to_remove)
+        to_remove_ids, _ = zip(*to_remove)
+        self.purge_objects(to_remove_ids)
         return to_remove
 
     def _next_uid(self) -> int:
