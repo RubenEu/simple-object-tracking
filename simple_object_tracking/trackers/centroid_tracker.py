@@ -64,9 +64,13 @@ class PointTracker(ObjectTracker):
             index = distances.index(min(distances))
             match = self.MatchedObject(previous=registered_tracked_objects[index],
                                        actual=object_actual)
-            if match not in matched_objects and distances[index] <= self.max_distance_allowed:
+            matched_registered_objects = [match.previous for match in matched_objects]
+            object_previous_matched = match.previous in matched_registered_objects
+            if not object_previous_matched and distances[index] <= self.max_distance_allowed:
                 previous_object_id = registered_tracked_objects[index].id
+                # Actualizar el objeto seguido con el nuevo emparejamiento.
                 self.objects.update_object(object_actual, previous_object_id, frame_actual)
+                # Guardar la información de los emparejamientos realizados.
                 matched_objects.append(match)
         return matched_objects
 
