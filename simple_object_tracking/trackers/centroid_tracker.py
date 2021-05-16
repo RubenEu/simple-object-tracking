@@ -74,7 +74,12 @@ class PointTracker(ObjectTracker):
                        frame_actual: int,
                        objects_actual: List[Object],
                        matches: Optional[List[MatchedObject]]) -> None:
-        remaining_objects = list(set(objects_actual) - set([match.actual for match in matches]))
+        # Si se han producido matches, quitar de los objetos propuestos para ser registrados.
+        if matches is None:
+            remaining_objects = objects_actual
+        else:
+            remaining_objects = list(set(objects_actual) - set([match.actual for match in matches]))
+        # Registrar los objetos restantes.
         for object_ in remaining_objects:
             self.objects.register_object(object_, frame_actual)
 
