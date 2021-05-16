@@ -17,8 +17,10 @@ from vehicle_speed_estimation.estimation_model import EstimationResult
 class TrackingVideoProperty(Enum):
     DRAW_OBJECTS = 0
     DRAW_OBJECTS_IDS = 1
-    DRAW_OBJECTS_BOUNDING_BOXES = 2
-    DRAW_OBJECTS_TRACES = 3
+    DRAW_OBJECTS_LABELS = 2
+    DRAW_OBJECTS_SCORES = 3
+    DRAW_OBJECTS_BOUNDING_BOXES = 4
+    DRAW_OBJECTS_TRACES = 5
     DRAW_OBJECTS_BOUNDING_BOXES_TRACES = 4,
     DRAW_OBJECTS_ESTIMATED_SPEED = 5,
     DRAW_OBJECTS_MEASURED_SPEED = 6,
@@ -135,6 +137,14 @@ class TrackingVideo:
         # DRAW_OBJECTS_IDS
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_IDS):
             object_information_texts.append(f'ID: {tracked_object_detection.id}')
+        # DRAW_OBJECTS_LABELS
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_LABELS):
+            object_information_texts.append(f'Label: {tracked_object_detection.object.label}')
+        # DRAW_OBJECTS_SCORES
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_SCORES):
+            object_information_texts.append(f'Score: '
+                                            f'{round(tracked_object_detection.object.score, 3)}')
+        # DRAW_OBJECTS_ESTIMATED_SPEED
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_ESTIMATED_SPEED):
             speed = self._get_object_estimated_speed(tracked_object, tracked_object_detection)
             object_information_texts.append(f'Estimated speed: {speed} Km/h')
