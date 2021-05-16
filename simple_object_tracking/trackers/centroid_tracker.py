@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple, NamedTuple, Optional
 
 from tqdm import tqdm
 
@@ -9,10 +9,102 @@ from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import euclidean_norm
 
 
+class PointTracker(ObjectTracker):
+    """Modelo de seguimiento de objetos representando el objeto por un punto (su centro):
+    """
+
+    class MatchedObject(NamedTuple):
+        """Representación del emparejamiento de un objeto, su detección previa y la actual."""
+        previous: Object
+        actual: Object
+
+    def __init__(self, max_distance_allowed: int = 120, *args, **kwargs):
+        """
+
+        :param max_distance_allowed: máxima distancia para considerar que dos objetos en dos frames
+        distintos pueden considerarse el mismo.
+        :param args:
+        :param kwargs:
+        """
+        super().__init__(*args, **kwargs)
+        self.max_distance_allowed = max_distance_allowed
+
+    def _matching_step(self,
+                       frame_actual: int,
+                       objects_actual: List[Object]) -> Optional[List[MatchedObject]]:
+        """"""
+        matched_objects = []
+        registered_tracked_objects = self.objects.registered_tracked_objects()
+        # Comprobar si hay algún objeto con el que poder emparejar.
+        if len(registered_tracked_objects) == 0:
+            return None
+        # Comprobar si hay algún objeto en el frame actual con el que poder emparejar.
+        if len(objects_actual) == 0:
+            return None
+        # Ordenar los objetos del frame actual por puntuación, así se hará el emparejamiento de
+        # ellos primero.
+        objects_actual.sort(reverse=True, key=lambda obj: obj.score)
+        # Ordenar los objetos registrados por puntuación también.
+        registered_tracked_objects.sort(reverse=True, key=lambda tobj: tobj[-1].object.score)
+        # Emparejar cada uno de los objetos del frame actual con los registrados.
+        for object_actual in objects_actual:
+            # Calcular las distancias del objeto actual a los registrados.
+            distances = [euclidean_norm(object_actual.center, tracked_object[-1].object.center)
+                         for tracked_object in registered_tracked_objects]
+            # Obtener el objeto registro al que menor distancia existe.
+            index = distances.index(min(distances))
+            match = self.MatchedObject(previous=registered_tracked_objects[index],
+                                       actual=object_actual)
+            if match not in matched_objects and distances[index] <= self.max_distance_allowed:
+                previous_object_id = registered_tracked_objects[index].id
+                self.objects.update_object(object_actual, previous_object_id, frame_actual)
+                matched_objects.append(match)
+        return matched_objects
+
+    def _register_step(self,
+                       frame_actual: int,
+                       objects_actual: List[Object],
+                       matches: Optional[List[MatchedObject]]) -> None:
+        objects_actual_registered: List[Object]
+        _, objects_actual_registered = (None, []) if matches is None else zip(*matches)
+        remaining_objects = list(set(objects_actual) - set(objects_actual_registered))
+        for object_ in remaining_objects:
+            self.objects.register_object(object_, frame_actual)
+
+    def _unregister_step(self, frame_actual: int) -> None:
+        max_frames_missing = self.frames_to_unregister_missing_objects
+        self.objects.unregister_missing_objects(frame_actual, max_frames_missing)
+
+    def _algorithm(self) -> None:
+        """Algoritmo de seguimiento:
+
+        #. Para cada frame de la secuencia:
+            #. Emparejar los objetos del frame actual con alguno de los objetos que constan como
+               registrados.
+            #. Registrar los objetos que no han podido ser emparejados.
+            #. Desregistrar los objetos que llevan sin detectarse un número de frames determinado.
+
+
+        :return:
+        """
+        t = tqdm(total=len(self.sequence), desc='PointTracker')
+        for frame_actual in range(0, len(self.sequence)):
+            objects_actual = self.frame_objects(frame_actual)
+            # 1. Emparejar.
+            matches = self._matching_step(frame_actual, objects_actual)
+            # 2. Registrar de los objetos no emparejados.
+            self._register_step(frame_actual, objects_actual, matches)
+            # 3. Desregistrar de los objetos desaparecidos.
+            self._unregister_step(frame_actual)
+            # Actualizar tqdm.
+            t.update()
+
+
 class CentroidTracker(ObjectTracker):
     """Modelo de seguimiento de objetos basados en su centro.
 
     Algoritmo de seguimiento:
+
     1. Registra todos los objetos detectados en el primer frame.
     2. Para cada frame en la secuencia:
         2.0. Obtener los objetos del frame actual.
