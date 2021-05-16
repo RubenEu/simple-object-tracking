@@ -56,6 +56,9 @@ class TrackedObject:
     def __str__(self) -> str:
         return f'TrackedObject(id={self.id}, status={self.status}, detections: {len(self)})'
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def append(self, frame: int, obj: Object) -> None:
         """Añade un registro al seguimiento del objeto.
 
@@ -178,6 +181,9 @@ class TrackedObjects:
 
     def __str__(self) -> str:
         return f'TrackedObjects({len(self)} objects registered).'
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def register_object(self, obj: Object, frame: int) -> bool:
         """Registra un objeto.
