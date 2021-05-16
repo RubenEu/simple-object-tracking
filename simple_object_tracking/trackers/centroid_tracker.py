@@ -3,6 +3,7 @@ from typing import List, Tuple, NamedTuple, Optional
 from tqdm import tqdm
 
 from simple_object_detection.object import Object
+from simple_object_detection.typing import Image
 from simple_object_tracking.datastructures import TrackedObjectDetection
 
 from simple_object_tracking.tracker import ObjectTracker
@@ -18,16 +19,24 @@ class PointTracker(ObjectTracker):
         previous: Object
         actual: Object
 
-    def __init__(self, max_distance_allowed: int = 120, *args, **kwargs):
+    def __init__(self,
+                 max_distance_allowed: int = 120,
+                 register_mask_region: Image = None,
+                 *args,
+                 **kwargs):
         """
 
         :param max_distance_allowed: máxima distancia para considerar que dos objetos en dos frames
         distintos pueden considerarse el mismo.
+        :param register_mask_region: máscara que indica la región donde únicamente se podrán
+        registrar objetos nuevos, es decir, si aparece un objeto en otra zona, no podrá ser
+        registrado, solo propuesto para emparejamiento.
         :param args:
         :param kwargs:
         """
         super().__init__(*args, **kwargs)
         self.max_distance_allowed = max_distance_allowed
+        self.register_mask_region = register_mask_region
 
     def _matching_step(self,
                        frame_actual: int,
