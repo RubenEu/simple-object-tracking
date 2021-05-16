@@ -6,7 +6,8 @@ from simple_object_tracking.exceptions import SimpleObjectTrackingException
 
 
 class TrackedObjectDetection(NamedTuple):
-    """Detección de un objeto en su seguimiento."""
+    """Detección de un objeto en su seguimiento.
+    """
     id: int
     frame: int
     object: Object
@@ -41,7 +42,9 @@ class TrackedObject:
         """
         if item >= len(self):
             raise IndexError(f'El índice {item} no está registrado para el objeto {self.id}')
-        return TrackedObjectDetection(self.id, self.frames[item], self.detections[item])
+        return TrackedObjectDetection(id=self.id,
+                                      frame=self.frames[item],
+                                      object=self.detections[item])
 
     def __len__(self) -> int:
         """Cantidad de veces que ha sido detectado el objeto.
@@ -249,7 +252,7 @@ class TrackedObjects:
     def registered_objects(self) -> List[TrackedObjectDetection]:
         """Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
 
-        Únicamente se devuelven los objetos cuyo estado esté mercado como registrado.
+        Únicamente se devuelven los objetos cuyo estado esté marcado como registrado.
 
         :return: lista de (último frame visto, objeto).
         """
@@ -257,6 +260,19 @@ class TrackedObjects:
         for obj in self._tracked_objects:
             if obj.status:
                 registered_objects.append(obj[-1])
+        return registered_objects
+
+    def registered_tracked_objects(self) -> List[TrackedObject]:
+        """Devuelve la lista de los objetos seguidos que están marcados como registrado.
+
+        Únicamente se devuelven los objetos cuyo estado esté marcado como registrado.
+
+        :return: lista de objetos seguidos que constan como registrados.
+        """
+        registered_objects = []
+        for obj in self._tracked_objects:
+            if obj.status:
+                registered_objects.append(obj)
         return registered_objects
 
     def insert_empty_object(self, id_: int) -> None:
