@@ -79,6 +79,10 @@ class PointTracker(ObjectTracker):
             remaining_objects = objects_actual
         else:
             remaining_objects = list(set(objects_actual) - set([match.actual for match in matches]))
+        # Filtrar los objetos que están dentro de la máscara de registro (si la hay).
+        if self.register_mask_region is not None:
+            remaining_objects = [obj for obj in remaining_objects
+                                 if self.register_mask_region[obj.center[1], obj.center[0]].all()]
         # Registrar los objetos restantes.
         for object_ in remaining_objects:
             self.objects.register_object(object_, frame_actual)
