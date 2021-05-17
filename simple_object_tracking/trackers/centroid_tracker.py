@@ -41,7 +41,23 @@ class PointTracker(ObjectTracker):
     def _matching_step(self,
                        frame_actual: int,
                        objects_actual: List[Object]) -> Optional[List[MatchedObject]]:
-        """"""
+        """Paso que realiza el emparejamiento de los objetos.
+
+        Proceso:
+            #. Se buscan todos los objetos que constan como registrados (es decir, se han seguido
+               hasta hace poco).
+            #. Comprobar que hay algún objeto registrado o se ha detectado algún objeto en el frame
+               actual, si no, no hay emparejamiento que realizar.
+            #. Ordenar los objetos actuales y registrados por puntuación, así se harán el
+               emparejamiento con ellos primeramente.
+            #. Para cada objeto del frame actual: calcular su distancia y emparejarlo con el que
+               más cerca esté de los registrados, si la distancia es menor que un factor dado.
+            #. Finalmente se devuelven todos los emparejamientos realizados.
+
+        :param frame_actual: identificador del frame actual.
+        :param objects_actual: lista de objetos del frame actual.
+        :return: lista de emparejamientos si es que se ha realizado alguno, si no, None.
+        """
         matched_objects = []
         registered_tracked_objects = self.objects.registered_tracked_objects()
         # Comprobar si hay algún objeto con el que poder emparejar.
@@ -64,7 +80,10 @@ class PointTracker(ObjectTracker):
             index = distances.index(min(distances))
             match = self.MatchedObject(previous=registered_tracked_objects[index],
                                        actual=object_actual)
+            # Lista de objetos previous ya emparejados.
             matched_registered_objects = [match.previous for match in matched_objects]
+            # Comprobación si el objeto registrado con el que se va a emparejar ya ha sido
+            # emparejado.
             object_previous_matched = match.previous in matched_registered_objects
             if not object_previous_matched and distances[index] <= self.max_distance_allowed:
                 previous_object_id = registered_tracked_objects[index].id
@@ -78,6 +97,16 @@ class PointTracker(ObjectTracker):
                        frame_actual: int,
                        objects_actual: List[Object],
                        matches: Optional[List[MatchedObject]]) -> None:
+        """Paso de registro de objetos.
+
+        Registra los objetos que no han sido emparejados. Además, si se ha indicicado una región
+        donde registrar objetos únicamente, el registro se limitará a ella.
+
+        :param frame_actual: identificador del frame actual.
+        :param objects_actual: lista de objetos del frame actual.
+        :param matches: lista de emparejamientos realizados o None si no hubo ninguno.
+        :return: None.
+        """
         # Si se han producido matches, quitar de los objetos propuestos para ser registrados.
         if matches is None:
             remaining_objects = objects_actual
@@ -92,6 +121,15 @@ class PointTracker(ObjectTracker):
             self.objects.register_object(object_, frame_actual)
 
     def _unregister_step(self, frame_actual: int) -> None:
+        """Paso de desregistro de los objetos.
+
+        Aquellos objetos que llevan sin verse un número de frames indicado en el modelo de
+        seguimiento, se cambiará su estado a *desregistrado* para así no tenerlos en cuenta en la
+        fase del emparejamiento.
+
+        :param frame_actual: identificador del frame actual.
+        :return: None.
+        """
         max_frames_missing = self.frames_to_unregister_missing_objects
         self.objects.unregister_missing_objects(frame_actual, max_frames_missing)
 
@@ -104,8 +142,7 @@ class PointTracker(ObjectTracker):
             #. Registrar los objetos que no han podido ser emparejados.
             #. Desregistrar los objetos que llevan sin detectarse un número de frames determinado.
 
-
-        :return:
+        :return: None.
         """
         t = tqdm(total=len(self.sequence), desc='PointTracker')
         for frame_actual in range(0, len(self.sequence)):
@@ -183,8 +220,6 @@ class CentroidTracker(ObjectTracker):
             # Comprueba que no se ha realizado el emparejamiento del objeto registrado con alguno de
             # los actuales.
             not_matched = min_distance_index not in objs_registered_uids_matched
-            # TODO: Si no se puede realizar el emparejamiento con el primero que está a menos
-            #  distancia, se podría probar con los siguientes...
             if not_matched and min_distance <= self.max_distance_allowed:
                 # Hacer el emparejamiento.
                 self.objects.update_object(
