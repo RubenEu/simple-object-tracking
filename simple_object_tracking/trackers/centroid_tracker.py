@@ -1,10 +1,9 @@
-from typing import List, Tuple, NamedTuple, Optional
+from typing import List, NamedTuple, Optional
 
 from tqdm import tqdm
 
 from simple_object_detection.object import Object
 from simple_object_detection.typing import Image
-from simple_object_tracking.datastructures import TrackedObjectDetection
 
 from simple_object_tracking.tracker import ObjectTracker
 from simple_object_tracking.utils import euclidean_norm
