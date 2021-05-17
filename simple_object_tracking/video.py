@@ -123,7 +123,7 @@ class TrackingVideo:
                      fid: int,
                      frame: Image,
                      tracked_object: TrackedObject,
-                     tracked_object_detection: TrackedObjectDetection) -> Image:
+                     tracked_object_detection: 'TrackedObjectDetection') -> Image:
         """Realiza el dibujado de un objeto en el frame actual.
 
         :param fid: número del frame.
