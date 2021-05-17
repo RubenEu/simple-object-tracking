@@ -1,1 +1,1 @@
-from simple_object_tracking.trackers.centroid_tracker import CentroidTracker, PointTracker
+from simple_object_tracking.trackers.centroid_tracker import PointTracker
