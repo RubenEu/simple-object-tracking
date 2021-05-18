@@ -345,8 +345,9 @@ class TrackedObjects:
         to_remove = [(tracked_object.id, len(tracked_object))
                      for tracked_object in self._tracked_objects
                      if len(tracked_object) < minimum_detections]
-        to_remove_ids, _ = zip(*to_remove)
-        self.purge_objects(to_remove_ids)
+        if len(to_remove) > 0:
+            to_remove_ids, _ = zip(*to_remove)
+            self.purge_objects(to_remove_ids)
         return to_remove
 
     def _next_uid(self) -> int:
