@@ -1,8 +1,10 @@
-from typing import List, Optional, NamedTuple, Tuple
+from typing import List, Optional, NamedTuple, Tuple, Any
 
 from simple_object_detection.object import Object
+from simple_object_detection.typing import Point2D
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
+from simple_object_tracking.utils.geometry import find_closest_position_to_line
 
 
 class TrackedObjectDetection(NamedTuple):
@@ -79,6 +81,19 @@ class TrackedObject:
             index = self.frames.index(frame)
         except ValueError:
             return None
+        return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
+
+    def find_closest_detection_to_line(self,
+                                       line: Tuple[Point2D, Point2D]) -> TrackedObjectDetection:
+        """Busca la detección más cercana a una línea dada.
+
+        Para ello utiliza el centro como punto del vehículo.
+
+        :param line: línea.
+        :return: detección del objeto seguido.
+        """
+        positions = [object_.center for object_ in self.detections]
+        index = find_closest_position_to_line(positions, line)
         return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
 
     def remove_tracked_positions(self, ids: List[int]) -> None:
@@ -185,12 +200,12 @@ class TrackedObjects:
     def __repr__(self) -> str:
         return str(self)
 
-    def register_object(self, obj: Object, frame: int) -> bool:
+    def register_object(self, obj: Object, frame: int) -> None:
         """Registra un objeto.
 
         :param obj: objeto detectado.
         :param frame: frame en el que se detectó.
-        :return: si se pudo registrar con éxito.
+        :return: None
         """
         stored_object = TrackedObject(
             obj_id=self._next_uid_and_increment(),
@@ -199,7 +214,6 @@ class TrackedObjects:
             ini_obj=obj
         )
         self._tracked_objects.append(stored_object)
-        return True
 
     def update_object(self, obj: Object, obj_id: int, frame: int) -> bool:
         """Actualiza un objeto dada su identificador único (uid), el nuevo objeto detectado, y el
@@ -248,12 +262,22 @@ class TrackedObjects:
                 objects_in_frame.append(detection)
         return objects_in_frame
 
+    @property
     def tracked_objects(self) -> List[TrackedObject]:
         """Devuelve la lista de objetos seguidos.
 
         :return: lista de objetos seguidos.
         """
         return self._tracked_objects
+
+    @tracked_objects.setter
+    def tracked_objects(self, tracked_objects: List[TrackedObject]) -> None:
+        """Establecee la lista de objetos seguidos.
+
+        :param tracked_objects: lista de seguimientos de los objetos.
+        :return: None.
+        """
+        self._tracked_objects = tracked_objects
 
     def registered_objects(self) -> List[TrackedObjectDetection]:
         """Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
