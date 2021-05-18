@@ -143,7 +143,7 @@ class PointTracker(ObjectTracker):
 
         :return: None.
         """
-        t = tqdm(total=len(self.sequence), desc='PointTracker')
+        t = tqdm(total=len(self.sequence), desc='PointTracker', disable=not self.verbose)
         for frame_actual in range(0, len(self.sequence)):
             objects_actual = self.frame_objects(frame_actual)
             # 1. Emparejar.

@@ -372,14 +372,15 @@ class TrackingVideo:
         """
         return self._properties
 
-    def generate_video(self, file_output: str) -> None:
+    def generate_video(self, file_output: str, verbose: bool = False) -> None:
         """Genera la secuencia de vídeo y la guarda en un archivo.
 
         :param file_output: archivo de salida.
+        :param verbose: indica si se quiere mostrar la barra de progreso o no.
         :return: None.
         """
         output_stream = StreamSequenceWriter(file_output, self.input_sequence.properties())
-        t = tqdm(total=len(self.input_sequence), desc='Generating video')
+        t = tqdm(total=len(self.input_sequence), desc='Generating video', disable=not verbose)
         for frame in self:
             output_stream.write(frame)
             t.update()
