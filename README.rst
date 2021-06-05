@@ -15,8 +15,7 @@ Simple Object Tracking
 
 
 
-
-Conjunto de herramientas para el seguimiento de objetos en una secuencia de vídeo.
+Toolkit for object tracking in a video sequence.
 
 
 * Free software: MIT license
@@ -26,7 +25,11 @@ Conjunto de herramientas para el seguimiento de objetos en una secuencia de víd
 Features
 --------
 
-* TODO
+* Wrapper for object tracking models.
+* Centroid tracker model with some improvements.
+* Datastructures to store the object tracking in a sequence.
+* Video tools to print the object tracking and other information in the sequence.
+
 
 Credits
 -------
