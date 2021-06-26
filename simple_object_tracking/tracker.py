@@ -18,6 +18,7 @@ class ObjectTracker(ABC):
                  objects_detections: List[List[Object]],
                  objects_filters: List[Callable[[List[Object]], List[Object]]] = None,
                  frames_to_unregister_missing_objects: int = 10,
+                 verbose: bool = False,
                  *args,
                  **kwargs):
         """
@@ -27,6 +28,7 @@ class ObjectTracker(ABC):
         :param objects_filters: lista de filtros para aplicar sobre los objetos detectados.
         :param frames_to_unregister_missing_objects: cantidad de frames para eliminar un objeto
         registrado.
+        :param verbose: indica si se quiere mostrar la barra de progreso o no.
         :param args:
         :param kwargs:
         """
@@ -34,6 +36,7 @@ class ObjectTracker(ABC):
         self.objects_detections = objects_detections
         self.objects_filters = objects_filters or []
         self.frames_to_unregister_missing_objects = frames_to_unregister_missing_objects
+        self.verbose = verbose
         # Estructura de datos de los objetos almacenados.
         self.objects = TrackedObjects()
 

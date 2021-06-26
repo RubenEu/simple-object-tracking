@@ -1,12 +1,15 @@
-from typing import List, Optional, NamedTuple, Tuple
+from typing import List, Optional, NamedTuple, Tuple, Any
 
 from simple_object_detection.object import Object
+from simple_object_detection.typing import Point2D
 
 from simple_object_tracking.exceptions import SimpleObjectTrackingException
+from simple_object_tracking.utils.geometry import find_closest_position_to_line
 
 
 class TrackedObjectDetection(NamedTuple):
-    """Detección de un objeto en su seguimiento."""
+    """Detección de un objeto en su seguimiento.
+    """
     id: int
     frame: int
     object: Object
@@ -41,7 +44,9 @@ class TrackedObject:
         """
         if item >= len(self):
             raise IndexError(f'El índice {item} no está registrado para el objeto {self.id}')
-        return TrackedObjectDetection(self.id, self.frames[item], self.detections[item])
+        return TrackedObjectDetection(id=self.id,
+                                      frame=self.frames[item],
+                                      object=self.detections[item])
 
     def __len__(self) -> int:
         """Cantidad de veces que ha sido detectado el objeto.
@@ -52,6 +57,9 @@ class TrackedObject:
 
     def __str__(self) -> str:
         return f'TrackedObject(id={self.id}, status={self.status}, detections: {len(self)})'
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def append(self, frame: int, obj: Object) -> None:
         """Añade un registro al seguimiento del objeto.
@@ -73,6 +81,19 @@ class TrackedObject:
             index = self.frames.index(frame)
         except ValueError:
             return None
+        return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
+
+    def find_closest_detection_to_line(self,
+                                       line: Tuple[Point2D, Point2D]) -> TrackedObjectDetection:
+        """Busca la detección más cercana a una línea dada.
+
+        Para ello utiliza el centro como punto del vehículo.
+
+        :param line: línea.
+        :return: detección del objeto seguido.
+        """
+        positions = [object_.center for object_ in self.detections]
+        index = find_closest_position_to_line(positions, line)
         return TrackedObjectDetection(self.id, self.frames[index], self.detections[index])
 
     def remove_tracked_positions(self, ids: List[int]) -> None:
@@ -176,12 +197,15 @@ class TrackedObjects:
     def __str__(self) -> str:
         return f'TrackedObjects({len(self)} objects registered).'
 
-    def register_object(self, obj: Object, frame: int) -> bool:
+    def __repr__(self) -> str:
+        return str(self)
+
+    def register_object(self, obj: Object, frame: int) -> None:
         """Registra un objeto.
 
         :param obj: objeto detectado.
         :param frame: frame en el que se detectó.
-        :return: si se pudo registrar con éxito.
+        :return: None
         """
         stored_object = TrackedObject(
             obj_id=self._next_uid_and_increment(),
@@ -190,7 +214,6 @@ class TrackedObjects:
             ini_obj=obj
         )
         self._tracked_objects.append(stored_object)
-        return True
 
     def update_object(self, obj: Object, obj_id: int, frame: int) -> bool:
         """Actualiza un objeto dada su identificador único (uid), el nuevo objeto detectado, y el
@@ -239,6 +262,7 @@ class TrackedObjects:
                 objects_in_frame.append(detection)
         return objects_in_frame
 
+    @property
     def tracked_objects(self) -> List[TrackedObject]:
         """Devuelve la lista de objetos seguidos.
 
@@ -246,10 +270,19 @@ class TrackedObjects:
         """
         return self._tracked_objects
 
+    @tracked_objects.setter
+    def tracked_objects(self, tracked_objects: List[TrackedObject]) -> None:
+        """Establecee la lista de objetos seguidos.
+
+        :param tracked_objects: lista de seguimientos de los objetos.
+        :return: None.
+        """
+        self._tracked_objects = tracked_objects
+
     def registered_objects(self) -> List[TrackedObjectDetection]:
         """Devuelve la lista de los objetos registrados con el último frame en el que fue visto.
 
-        Únicamente se devuelven los objetos cuyo estado esté mercado como registrado.
+        Únicamente se devuelven los objetos cuyo estado esté marcado como registrado.
 
         :return: lista de (último frame visto, objeto).
         """
@@ -257,6 +290,19 @@ class TrackedObjects:
         for obj in self._tracked_objects:
             if obj.status:
                 registered_objects.append(obj[-1])
+        return registered_objects
+
+    def registered_tracked_objects(self) -> List[TrackedObject]:
+        """Devuelve la lista de los objetos seguidos que están marcados como registrado.
+
+        Únicamente se devuelven los objetos cuyo estado esté marcado como registrado.
+
+        :return: lista de objetos seguidos que constan como registrados.
+        """
+        registered_objects = []
+        for obj in self._tracked_objects:
+            if obj.status:
+                registered_objects.append(obj)
         return registered_objects
 
     def insert_empty_object(self, id_: int) -> None:
@@ -299,8 +345,9 @@ class TrackedObjects:
         to_remove = [(tracked_object.id, len(tracked_object))
                      for tracked_object in self._tracked_objects
                      if len(tracked_object) < minimum_detections]
-        to_remove_ids, _ = zip(*to_remove)
-        self.purge_objects(to_remove_ids)
+        if len(to_remove) > 0:
+            to_remove_ids, _ = zip(*to_remove)
+            self.purge_objects(to_remove_ids)
         return to_remove
 
     def _next_uid(self) -> int:

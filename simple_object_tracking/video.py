@@ -17,8 +17,10 @@ from vehicle_speed_estimation.estimation_model import EstimationResult
 class TrackingVideoProperty(Enum):
     DRAW_OBJECTS = 0
     DRAW_OBJECTS_IDS = 1
-    DRAW_OBJECTS_BOUNDING_BOXES = 2
-    DRAW_OBJECTS_TRACES = 3
+    DRAW_OBJECTS_LABELS = 2
+    DRAW_OBJECTS_SCORES = 3
+    DRAW_OBJECTS_BOUNDING_BOXES = 4
+    DRAW_OBJECTS_TRACES = 5
     DRAW_OBJECTS_BOUNDING_BOXES_TRACES = 4,
     DRAW_OBJECTS_ESTIMATED_SPEED = 5,
     DRAW_OBJECTS_MEASURED_SPEED = 6,
@@ -121,7 +123,7 @@ class TrackingVideo:
                      fid: int,
                      frame: Image,
                      tracked_object: TrackedObject,
-                     tracked_object_detection: TrackedObjectDetection) -> Image:
+                     tracked_object_detection: 'TrackedObjectDetection') -> Image:
         """Realiza el dibujado de un objeto en el frame actual.
 
         :param fid: número del frame.
@@ -135,6 +137,14 @@ class TrackingVideo:
         # DRAW_OBJECTS_IDS
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_IDS):
             object_information_texts.append(f'ID: {tracked_object_detection.id}')
+        # DRAW_OBJECTS_LABELS
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_LABELS):
+            object_information_texts.append(f'Label: {tracked_object_detection.object.label}')
+        # DRAW_OBJECTS_SCORES
+        if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_SCORES):
+            object_information_texts.append(f'Score: '
+                                            f'{round(tracked_object_detection.object.score, 3)}')
+        # DRAW_OBJECTS_ESTIMATED_SPEED
         if self.get_property(TrackingVideoProperty.DRAW_OBJECTS_ESTIMATED_SPEED):
             speed = self._get_object_estimated_speed(tracked_object, tracked_object_detection)
             object_information_texts.append(f'Estimated speed: {speed} Km/h')
@@ -362,14 +372,15 @@ class TrackingVideo:
         """
         return self._properties
 
-    def generate_video(self, file_output: str) -> None:
+    def generate_video(self, file_output: str, verbose: bool = False) -> None:
         """Genera la secuencia de vídeo y la guarda en un archivo.
 
         :param file_output: archivo de salida.
+        :param verbose: indica si se quiere mostrar la barra de progreso o no.
         :return: None.
         """
         output_stream = StreamSequenceWriter(file_output, self.input_sequence.properties())
-        t = tqdm(total=len(self.input_sequence), desc='Generating video')
+        t = tqdm(total=len(self.input_sequence), desc='Generating video', disable=not verbose)
         for frame in self:
             output_stream.write(frame)
             t.update()
